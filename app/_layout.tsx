@@ -1,24 +1,44 @@
-import { useEffect } from 'react'
-import { Stack, useRouter, useSegments } from 'expo-router'
-import { supabase } from '../lib/supabase'
+import { Stack } from 'expo-router';
+import { AuthProvider, useAuth } from '../lib/auth';
+import { colors } from '../lib/theme';
 
-export default function RootLayout() {
-  const router = useRouter()
-  const segments = useSegments()
+// Decides which screens exist based on whether someone is signed in.
+// Stack.Protected handles the redirects: signed-out users only see (auth),
+// signed-in users only see the app.
+function RootNavigator() {
+  const { session, loading } = useAuth();
+  if (loading) return null; // still reading the saved session from the phone
 
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      const inAuthGroup = segments[0] === '(auth)'
-
-      if (!session && !inAuthGroup) {
-        router.replace('/(auth)/login')
-      } else if (session && inAuthGroup) {
-        router.replace('/(tabs)')
-      }
-    })
-  }, [])
+  const signedIn = session !== null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }} />
-  )
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+      <Stack.Protected guard={signedIn}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="listing/[id]"
+          options={{
+            headerShown: true,
+            title: '',
+            headerBackTitle: 'Back',
+            headerTintColor: colors.ink,
+            headerStyle: { backgroundColor: colors.paper },
+            headerShadowVisible: false,
+          }}
+        />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!signedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
+  );
 }

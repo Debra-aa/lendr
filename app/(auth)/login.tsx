@@ -1,94 +1,45 @@
-import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
-import { useRouter } from 'expo-router'
-import { supabase } from '../../lib/supabase'
+import { useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { supabase } from '../../lib/supabase';
+import { Button, Field } from '../../components/ui';
+import { authStyles as styles } from '../../components/authStyles';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) Alert.alert('Error', error.message)
+    if (!email.trim() || !password) {
+      Alert.alert('Missing info', 'Enter your email and password.');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setLoading(false);
+    // On success the root layout sees the new session and opens the app automatically.
+    if (error) Alert.alert('Could not log in', error.message);
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.logoRow}>
+        <View style={styles.logo}><View style={styles.logoHole} /></View>
+        <Text style={styles.wordmark}>lendr</Text>
+      </View>
       <Text style={styles.title}>Welcome back</Text>
-      <Text style={styles.subtitle}>Log in to your Lendr account</Text>
+      <Text style={styles.subtitle}>Log in to borrow and lend on campus.</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+      <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@calvin.edu" />
+      <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <Button label="Log in" onPress={handleLogin} busy={loading} />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-        <Text style={styles.link}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
-    </View>
-  )
+      <Pressable onPress={() => router.push('/(auth)/register')} style={styles.linkWrap}>
+        <Text style={styles.link}>New to Lendr? Create an account</Text>
+      </Pressable>
+    </KeyboardAvoidingView>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#000',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  link: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 14,
-  },
-})
