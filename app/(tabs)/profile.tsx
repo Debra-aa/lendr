@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { AVATAR_BUCKET, supabase, uploadImage } from '../../lib/supabase';
+import { AVATAR_BUCKET, PHOTO_BUCKET, supabase, uploadImage } from '../../lib/supabase';
 import { useAuth, useUserId } from '../../lib/auth';
 import { LISTING_SELECT } from '../../lib/queries';
 import { money } from '../../lib/format';
@@ -42,6 +42,7 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<Stats>({ rating: null, points: 0, earnedCents: 0 });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     const [listingsResult, lentResult, reviewsResult] = await Promise.all([
@@ -125,6 +126,39 @@ export default function ProfileScreen() {
     ]);
   }
 
+  function confirmDeleteAccount() {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your profile, listings, photos, rentals and wanted posts. It cannot be undone.',
+      [
+        { text: 'Keep account', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: deleteAccount },
+      ],
+    );
+  }
+
+  async function deleteAccount() {
+    setDeleting(true);
+    try {
+      // Photos first: Storage files can't be removed from inside the database.
+      // Best effort, so a leftover photo never blocks deleting the account.
+      const { data: images } = await supabase
+        .from('listing_images').select('storage_path, listings!inner(owner_id)').eq('listings.owner_id', userId);
+      const photoPaths = (images ?? []).map((i) => i.storage_path as string);
+      if (photoPaths.length) await supabase.storage.from(PHOTO_BUCKET).remove(photoPaths);
+      const { data: avatars } = await supabase.storage.from(AVATAR_BUCKET).list(userId);
+      if (avatars?.length) await supabase.storage.from(AVATAR_BUCKET).remove(avatars.map((f) => `${userId}/${f.name}`));
+
+      const { error } = await supabase.rpc('delete_my_account');
+      if (error) throw error;
+      // The login no longer exists, so just clear it from this phone.
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+      setDeleting(false);
+      Alert.alert('Account not deleted', e instanceof Error ? e.message : 'Please try again.');
+    }
+  }
+
   return (
     <ScrollView
       style={shared.screen}
@@ -184,6 +218,7 @@ export default function ProfileScreen() {
       </View>
 
       <Button label="Log out" variant="ghost" onPress={signOut} style={{ marginTop: 8 }} />
+      <Button label="Delete account" variant="danger" onPress={confirmDeleteAccount} busy={deleting} style={{ marginTop: 8 }} />
     </ScrollView>
   );
 }
