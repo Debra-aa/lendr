@@ -14,19 +14,19 @@ function tabIcon(name: IconName) {
 export default function TabsLayout() {
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Tabs
         screenOptions={{
           header: () => <Banner />,
           sceneStyle: { backgroundColor: colors.paper },
-          tabBarActiveTintColor: colors.teal,
+          tabBarActiveTintColor: colors.mint,
           tabBarInactiveTintColor: colors.muted,
           tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.line },
           tabBarLabelStyle: { fontWeight: '600' },
         }}
       >
         <Tabs.Screen name="index" options={{ title: 'Browse', tabBarIcon: tabIcon('view-grid-outline') }} />
-        <Tabs.Screen name="wanted" options={{ title: 'Wanted', tabBarIcon: tabIcon('message-text-outline') }} />
+        <Tabs.Screen name="wanted" options={{ title: 'Wanted', tabBarIcon: tabIcon('message-alert-outline') }} />
         <Tabs.Screen
           name="create"
           options={{
@@ -34,18 +34,21 @@ export default function TabsLayout() {
             tabBarAccessibilityLabel: 'List an item',
             tabBarIcon: () => (
               <View style={styles.plus}>
-                <MaterialCommunityIcons name="plus" size={24} color={colors.ink} />
+                <MaterialCommunityIcons name="plus" size={24} color="#fff" />
               </View>
             ),
           }}
         />
         <Tabs.Screen name="rentals" options={{ title: 'My rentals', tabBarIcon: tabIcon('clipboard-text-outline') }} />
-        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('account-outline') }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('account-circle-outline') }} />
       </Tabs>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  plus: { width: 34, height: 34, backgroundColor: colors.maize, alignItems: 'center', justifyContent: 'center' },
+  plus: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: colors.pink,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

@@ -1,14 +1,26 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import type { Profile } from '../types/database';
 
-type AuthState = { session: Session | null; loading: boolean };
+type AuthState = {
+  session: Session | null;
+  profile: Profile | null;
+  loading: boolean;
+  refreshProfile: () => Promise<void>;
+};
 
-const AuthContext = createContext<AuthState>({ session: null, loading: true });
+const AuthContext = createContext<AuthState>({
+  session: null,
+  profile: null,
+  loading: true,
+  refreshProfile: async () => {},
+});
 
-/** Keeps track of who is signed in and shares it with every screen. */
+/** Keeps track of who is signed in and their profile, and shares it with every screen. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,7 +32,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  return <AuthContext.Provider value={{ session, loading }}>{children}</AuthContext.Provider>;
+  const userId = session?.user.id;
+
+  const refreshProfile = useCallback(async () => {
+    if (!userId) {
+      setProfile(null);
+      return;
+    }
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    setProfile((data as Profile) ?? null);
+  }, [userId]);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
+
+  return (
+    <AuthContext.Provider value={{ session, profile, loading, refreshProfile }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
@@ -29,6 +58,5 @@ export function useAuth() {
 
 /** The signed-in user's id. Only use on screens behind the sign-in check. */
 export function useUserId(): string {
-  const { session } = useAuth();
-  return session?.user.id ?? '';
+  return useAuth().session?.user.id ?? '';
 }

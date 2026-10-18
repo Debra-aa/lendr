@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Button, Field } from '../../components/ui';
-import { authStyles as styles } from '../../components/authStyles';
+import { AuthScreen, authText } from '../../components/AuthScreen';
+import { PasswordField } from '../../components/PasswordField';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -18,7 +19,8 @@ export default function RegisterScreen() {
       return;
     }
     setLoading(true);
-    // full_name is saved on the account; the database trigger copies it into profiles.
+    // full_name is saved on the account; the database copies it into profiles
+    // and fills in the campus from the email domain.
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -29,33 +31,24 @@ export default function RegisterScreen() {
     if (error) {
       Alert.alert('Could not create account', error.message);
     } else if (!data.session) {
-      // Email confirmation is on in Supabase, so there is no session until they confirm.
-      Alert.alert('Check your email', 'Tap the link we sent you, then log in.');
+      // Email confirmation is on, so there is no session until they tap the link.
+      Alert.alert('Check your email', 'Tap the link we sent you to confirm your account, then log in.');
       router.replace('/(auth)/login');
     }
     // If a session came back, the root layout opens the app automatically.
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={[styles.screen, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoRow}>
-          <View style={styles.logo}><View style={styles.logoHole} /></View>
-          <Text style={styles.wordmark}>lendr</Text>
-        </View>
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>Your campus is your supply closet.</Text>
+    <AuthScreen mode="signup" title="Create your account" sub="Borrow what you need. Lend what you are not using.">
+      <Field label="Full name" value={fullName} onChangeText={setFullName} autoComplete="name" />
+      <Field label="School email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@calvin.edu" />
+      <PasswordField value={password} onChangeText={setPassword} autoComplete="new-password" placeholder="At least 6 characters" />
 
-        <Field label="Full name" value={fullName} onChangeText={setFullName} autoComplete="name" />
-        <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@calvin.edu" />
-        <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" placeholder="At least 6 characters" />
+      <Button label="Create account" onPress={handleRegister} busy={loading} />
 
-        <Button label="Create account" onPress={handleRegister} busy={loading} />
-
-        <Pressable onPress={() => router.replace('/(auth)/login')} style={styles.linkWrap}>
-          <Text style={styles.link}>Already have an account? Log in</Text>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Text style={authText.fine}>
+        Use your .edu email so other students know you are on campus. Your school is added automatically.
+      </Text>
+    </AuthScreen>
   );
 }

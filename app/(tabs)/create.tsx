@@ -3,26 +3,14 @@ import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, St
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { PHOTO_BUCKET, supabase } from '../../lib/supabase';
+import { PHOTO_BUCKET, supabase, uploadImage } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { toCents } from '../../lib/format';
-import { colors } from '../../lib/theme';
+import { colors, radius } from '../../lib/theme';
 import { CATEGORIES } from '../../types/database';
 import { Button, Chip, Field, Title, shared } from '../../components/ui';
 
 const MAX_PHOTOS = 4;
-
-/** Uploads one photo to Storage and returns the path saved in listing_images. */
-async function uploadPhoto(asset: ImagePicker.ImagePickerAsset, userId: string, listingId: string, index: number) {
-  const type = asset.mimeType ?? 'image/jpeg';
-  const extension = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
-  // The first folder must be the user's id; the storage policy checks this.
-  const path = `${userId}/${listingId}/${Date.now()}-${index}.${extension}`;
-  const body = await (await fetch(asset.uri)).arrayBuffer();
-  const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, body, { contentType: type });
-  if (error) throw error;
-  return path;
-}
 
 export default function CreateListingScreen() {
   const router = useRouter();
@@ -89,7 +77,11 @@ export default function CreateListingScreen() {
     let failed = 0;
     for (const [index, asset] of photos.entries()) {
       try {
-        const path = await uploadPhoto(asset, userId, listing.id, index);
+        const type = asset.mimeType ?? 'image/jpeg';
+        const extension = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
+        // The first folder must be the user's id; the storage policy checks this.
+        const path = `${userId}/${listing.id}/${Date.now()}-${index}.${extension}`;
+        await uploadImage(PHOTO_BUCKET, path, asset.uri, type);
         const { error: rowError } = await supabase
           .from('listing_images')
           .insert({ listing_id: listing.id, storage_path: path, position: index });
@@ -113,7 +105,7 @@ export default function CreateListingScreen() {
         <Text style={styles.label}>Photos</Text>
         <View style={styles.photoRow}>
           {photos.map((p, i) => (
-            <View key={p.uri} style={styles.thumbWrap}>
+            <View key={p.uri}>
               <Image source={{ uri: p.uri }} style={styles.thumb} />
               <Pressable accessibilityLabel="Remove photo" style={styles.remove} onPress={() => setPhotos(photos.filter((_, j) => j !== i))}>
                 <MaterialCommunityIcons name="close" size={16} color="#fff" />
@@ -122,7 +114,7 @@ export default function CreateListingScreen() {
           ))}
           {photos.length < MAX_PHOTOS && (
             <Pressable style={[styles.thumb, styles.addPhoto]} onPress={pickPhotos} accessibilityLabel="Add photos">
-              <MaterialCommunityIcons name="camera-plus-outline" size={28} color={colors.ink} />
+              <MaterialCommunityIcons name="camera-plus-outline" size={28} color={colors.mint} />
               <Text style={styles.addText}>Add</Text>
             </Pressable>
           )}
@@ -152,10 +144,12 @@ export default function CreateListingScreen() {
 const styles = StyleSheet.create({
   label: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 6 },
   photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  thumbWrap: { position: 'relative' },
-  thumb: { width: 74, height: 74, borderRadius: 10, borderWidth: 1, borderColor: colors.rim },
-  addPhoto: { backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' },
-  addText: { fontSize: 12, fontWeight: '700', color: colors.ink },
-  remove: { position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  thumb: { width: 74, height: 74, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.rim },
+  addPhoto: { backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderColor: colors.mint },
+  addText: { fontSize: 12, fontWeight: '700', color: colors.mint },
+  remove: {
+    position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11,
+    backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center',
+  },
   pair: { flexDirection: 'row', gap: 12 },
 });

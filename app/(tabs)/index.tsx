@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { LISTING_SELECT } from '../../lib/queries';
-import { colors } from '../../lib/theme';
+import { colors, radius } from '../../lib/theme';
 import { CATEGORIES, type Listing } from '../../types/database';
 import { ListingCard } from '../../components/ListingCard';
 import { Button, Chip, Empty, Title, shared } from '../../components/ui';
@@ -72,7 +72,7 @@ export default function BrowseScreen() {
   );
 
   if (loading) {
-    return <View style={[shared.screen, styles.center]}><ActivityIndicator size="large" color={colors.teal} /></View>;
+    return <View style={[shared.screen, styles.center]}><ActivityIndicator size="large" color={colors.mint} /></View>;
   }
 
   return (
@@ -84,7 +84,7 @@ export default function BrowseScreen() {
       keyExtractor={(item) => item.id}
       numColumns={2}
       ListHeaderComponent={header}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.mint} />}
       ListEmptyComponent={
         error ? (
           <Empty message={`Listings could not load: ${error}`} action={<Button label="Try again" variant="ghost" onPress={refresh} />} />
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
   search: {
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card,
-    borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, height: 46,
+    borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, height: 46,
   },
   searchInput: { flex: 1, fontSize: 16, color: colors.ink },
   chips: { marginTop: 12, marginBottom: 2 },

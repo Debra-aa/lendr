@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { BOOKING_SELECT } from '../../lib/queries';
 import { firstName, money, shortDate } from '../../lib/format';
-import { colors } from '../../lib/theme';
+import { colors, radius } from '../../lib/theme';
 import type { Booking, BookingStatus } from '../../types/database';
 import { ItemTag } from '../../components/ItemTag';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -61,7 +61,7 @@ export default function RentalsScreen() {
             <View style={styles.stars}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Pressable key={n} accessibilityLabel={`${n} star${n > 1 ? 's' : ''}`} onPress={() => review(b, n)} hitSlop={6}>
-                  <MaterialCommunityIcons name="star-outline" size={28} color={colors.maize} />
+                  <MaterialCommunityIcons name="star-outline" size={28} color={colors.mint} />
                 </Pressable>
               ))}
             </View>
@@ -98,14 +98,14 @@ export default function RentalsScreen() {
     <ScrollView
       style={shared.screen}
       contentContainerStyle={shared.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.mint} />}
     >
       <Title>My rentals</Title>
 
       <View style={styles.segment}>
         {(['borrowing', 'lending'] as Side[]).map((s) => (
           <Pressable key={s} onPress={() => setSide(s)} style={[styles.segButton, side === s && styles.segSelected]} accessibilityState={{ selected: side === s }}>
-            <Text style={[styles.segText, side === s && { color: colors.paper }]}>{s === 'borrowing' ? 'Borrowing' : 'Lending'}</Text>
+            <Text style={[styles.segText, side === s && { color: '#fff' }]}>{s === 'borrowing' ? 'Borrowing' : 'Lending'}</Text>
           </Pressable>
         ))}
       </View>
@@ -139,8 +139,11 @@ export default function RentalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  segment: { flexDirection: 'row', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 4, marginBottom: 14 },
-  segButton: { flex: 1, paddingVertical: 8, alignItems: 'center' },
+  segment: {
+    flexDirection: 'row', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
+    borderRadius: radius.md, padding: 4, marginBottom: 14,
+  },
+  segButton: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: radius.sm },
   segSelected: { backgroundColor: colors.ink },
   segText: { fontWeight: '700', color: colors.muted },
   row: { flexDirection: 'row', gap: 12 },

@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   hole: {
     position: 'absolute', top: '8%', alignSelf: 'center', width: 12, height: 12, borderRadius: 6,
-    backgroundColor: colors.paper, borderWidth: 1, borderColor: 'rgba(30,42,58,0.3)',
+    backgroundColor: colors.paper, borderWidth: 1, borderColor: 'rgba(20,26,33,0.3)',
   },
   price: {
     position: 'absolute', right: 6, bottom: 6, backgroundColor: colors.card,

@@ -1,4 +1,4 @@
-// A listing in the Browse grid: rounded box with a thin black rim and a solid offset shadow.
+// A listing in the Browse grid: rounded box with a thin rim and a solid offset shadow.
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { money } from '../lib/format';
 import { colors } from '../lib/theme';
@@ -11,7 +11,7 @@ export function ListingCard({ listing, onPress }: { listing: Listing; onPress: (
     <Pressable onPress={onPress} accessibilityRole="button" style={styles.outer}>
       {({ pressed }) => (
         <>
-          {/* The black box behind the card acts as the offset shadow on both iOS and Android. */}
+          {/* The dark box behind the card acts as the offset shadow on both iOS and Android. */}
           <View style={[styles.shadow, pressed && { top: 1, left: 1 }]} />
           <View style={[styles.card, pressed && { transform: [{ translateX: 2 }, { translateY: 2 }] }]}>
             <ItemTag

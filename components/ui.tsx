@@ -5,7 +5,7 @@ import {
   ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View,
   type TextInputProps, type ViewStyle,
 } from 'react-native';
-import { colors } from '../lib/theme';
+import { colors, radius } from '../lib/theme';
 
 type ButtonProps = {
   label: string;
@@ -29,7 +29,8 @@ export function Button({ label, onPress, variant = 'primary', small, busy, disab
         small && styles.buttonSmall,
         variant === 'ghost' && styles.buttonGhost,
         variant === 'danger' && styles.buttonDanger,
-        (pressed || isDisabled) && { opacity: 0.7 },
+        pressed && { transform: [{ translateY: 1 }], opacity: 0.85 },
+        isDisabled && { opacity: 0.6 },
         style,
       ]}
     >
@@ -52,7 +53,7 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       onPress={onPress}
       style={[styles.chip, selected && styles.chipSelected]}
     >
-      <Text style={[styles.chipText, selected && { color: colors.paper }]}>{label}</Text>
+      <Text style={[styles.chipText, selected && { color: '#fff' }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -86,26 +87,34 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
 
 export const shared = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  content: { padding: 20, paddingBottom: 40 },
-  box: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 14, marginBottom: 12 },
+  content: { padding: 20, paddingTop: 12, paddingBottom: 40 },
+  box: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.lg,
+    padding: 14, marginBottom: 12,
+  },
   muted: { color: colors.muted },
-  error: { color: colors.danger, marginTop: 10 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
 });
 
 const styles = StyleSheet.create({
-  button: { backgroundColor: colors.teal, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
-  buttonSmall: { paddingVertical: 8, paddingHorizontal: 14, marginTop: 0 },
+  button: { backgroundColor: colors.mint, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  buttonSmall: { paddingVertical: 8, paddingHorizontal: 14, marginTop: 0, borderRadius: radius.sm },
   buttonGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.line },
   buttonDanger: { backgroundColor: colors.danger },
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  chip: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, paddingVertical: 6, paddingHorizontal: 14, marginRight: 8 },
-  chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chip: {
+    borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, borderRadius: radius.pill,
+    paddingVertical: 6, paddingHorizontal: 14, marginRight: 8,
+  },
+  chipSelected: { backgroundColor: colors.mint, borderColor: colors.mint },
   chipText: { color: colors.ink, fontSize: 14 },
   label: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 6 },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colors.ink },
+  input: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colors.ink,
+  },
   title: { fontSize: 28, fontWeight: '700', color: colors.ink, letterSpacing: -0.5 },
   sub: { color: colors.muted, marginTop: 4, fontSize: 15 },
-  empty: { alignItems: 'stretch', paddingVertical: 40 },
+  empty: { alignItems: 'stretch', paddingVertical: 32 },
   emptyText: { color: colors.muted, textAlign: 'center', fontSize: 15 },
 });

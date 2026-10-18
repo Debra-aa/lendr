@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../lib/theme';
+import { colors, radius } from '../lib/theme';
 import type { BookingStatus } from '../types/database';
 
 // Plain-language labels for each booking status stored in the database.
@@ -13,12 +13,12 @@ const LABELS: Record<BookingStatus, string> = {
 };
 
 const BACKGROUNDS: Record<BookingStatus, string> = {
-  requested: colors.tags[0],
-  approved: colors.tags[1],
-  declined: colors.tags[3],
-  cancelled: colors.tags[3],
+  requested: colors.tags[3],
+  approved: colors.tags[0],
+  declined: colors.tags[1],
+  cancelled: colors.tags[1],
   active: colors.tags[2],
-  completed: colors.tags[1],
+  completed: colors.tags[0],
 };
 
 export function StatusBadge({ status }: { status: BookingStatus }) {
@@ -30,6 +30,6 @@ export function StatusBadge({ status }: { status: BookingStatus }) {
 }
 
 const styles = StyleSheet.create({
-  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 2, marginTop: 6 },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 2, marginTop: 6, borderRadius: radius.pill },
   text: { fontSize: 13, fontWeight: '700', color: colors.ink },
 });

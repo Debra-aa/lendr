@@ -4,13 +4,16 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { firstName, money, toCents } from '../../lib/format';
-import { colors } from '../../lib/theme';
+import { colors, radius } from '../../lib/theme';
 import type { WantedRequest } from '../../types/database';
-import { Button, Empty, Field, Title, shared } from '../../components/ui';
+import { useShrinkingBanner } from '../../components/Banner';
+import { SectionBanner } from '../../components/SectionBanner';
+import { Button, Empty, Field, shared } from '../../components/ui';
 
 export default function WantedScreen() {
   const router = useRouter();
   const userId = useUserId();
+  const onScroll = useShrinkingBanner();
   const [posts, setPosts] = useState<WantedRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [title, setTitle] = useState('');
@@ -66,9 +69,15 @@ export default function WantedScreen() {
         style={shared.screen}
         contentContainerStyle={shared.content}
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        onScroll={onScroll}
+        scrollEventThrottle={32}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.mint} />}
       >
-        <Title sub="Students asking for things nobody has listed yet. If you have it, list it.">Wanted</Title>
+        <SectionBanner
+          icon="message-alert-outline"
+          title="Wanted"
+          sub="Students asking for things nobody has listed yet. If you have it, list it."
+        />
 
         {posts.length === 0 ? <Empty message="No requests right now. Be the first to ask for something." /> : null}
 
@@ -83,7 +92,7 @@ export default function WantedScreen() {
               </Text>
               <View style={[shared.row, { marginTop: 10 }]}>
                 {p.offer_cents_per_day !== null ? (
-                  <Text style={styles.offer}>Offering {money(p.offer_cents_per_day)}/day</Text>
+                  <View style={styles.offer}><Text style={styles.offerText}>Offering {money(p.offer_cents_per_day)}/day</Text></View>
                 ) : <View />}
                 {mine ? (
                   <Button small variant="ghost" label="Mark as found" onPress={() => markFound(p.id)} />
@@ -109,6 +118,7 @@ export default function WantedScreen() {
 
 const styles = StyleSheet.create({
   postTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 4 },
-  offer: { backgroundColor: colors.tags[0], color: colors.ink, fontWeight: '700', fontSize: 13, paddingHorizontal: 10, paddingVertical: 3, overflow: 'hidden' },
+  offer: { backgroundColor: colors.pink, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
+  offerText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   formTitle: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 18, marginBottom: 10 },
 });

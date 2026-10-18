@@ -5,8 +5,9 @@ import { supabase, photoUrl } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { LISTING_SELECT } from '../../lib/queries';
 import { addDays, firstName, money, shortDate, toISODate } from '../../lib/format';
-import { colors } from '../../lib/theme';
+import { colors, radius } from '../../lib/theme';
 import type { Listing } from '../../types/database';
+import { Avatar } from '../../components/Avatar';
 import { ItemTag } from '../../components/ItemTag';
 import { Button, Empty, shared } from '../../components/ui';
 
@@ -33,7 +34,7 @@ export default function ListingScreen() {
       });
   }, [id]);
 
-  if (loading) return <View style={[shared.screen, styles.center]}><ActivityIndicator color={colors.teal} /></View>;
+  if (loading) return <View style={[shared.screen, styles.center]}><ActivityIndicator color={colors.mint} /></View>;
   if (!listing) return <View style={[shared.screen, shared.content]}><Empty message="This listing was removed or does not exist." /></View>;
 
   const isMine = listing.owner_id === userId;
@@ -100,7 +101,7 @@ export default function ListingScreen() {
       {listing.description ? <Text style={shared.muted}>{listing.description}</Text> : null}
 
       <View style={[shared.box, styles.owner]}>
-        <View style={styles.avatar}><Text style={styles.avatarText}>{ownerName[0]}</Text></View>
+        <Avatar name={ownerName} size={40} />
         <View style={{ flex: 1 }}>
           <Text style={styles.bold}>{ownerName}</Text>
           <Text style={shared.muted}>Pickup: {listing.pickup_location || listing.profiles?.campus || 'Arrange with the owner'}</Text>
@@ -160,23 +161,27 @@ export default function ListingScreen() {
 
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
-  photos: { borderRadius: 10, borderWidth: 1, borderColor: colors.rim },
+  photos: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.rim },
   heroTag: { width: 240, alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: colors.ink, marginTop: 16, marginBottom: 6 },
   owner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
-  avatar: { width: 40, height: 40, backgroundColor: colors.tags[2], alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontWeight: '700', color: colors.ink, fontSize: 18 },
   bold: { fontWeight: '700', color: colors.ink, fontSize: 16 },
   facts: { flexDirection: 'row', gap: 10 },
   fact: { flex: 1 },
   factValue: { fontSize: 18, fontWeight: '700', color: colors.ink },
-  day: { borderWidth: 1, borderColor: colors.line, paddingVertical: 8, width: 56, alignItems: 'center', marginRight: 8, backgroundColor: colors.paper },
-  daySelected: { backgroundColor: colors.ink, borderColor: colors.ink },
+  day: {
+    borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingVertical: 8, width: 56,
+    alignItems: 'center', marginRight: 8, backgroundColor: colors.paper,
+  },
+  daySelected: { backgroundColor: colors.mint, borderColor: colors.mint },
   dayName: { fontSize: 13, color: colors.muted },
   dayNum: { fontSize: 18, fontWeight: '700', color: colors.ink },
-  dayTextSelected: { color: colors.paper },
+  dayTextSelected: { color: '#fff' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  step: { width: 36, height: 36, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  step: {
+    width: 36, height: 36, borderWidth: 1, borderColor: colors.line, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper,
+  },
   stepText: { fontSize: 20, fontWeight: '700', color: colors.ink },
   total: { borderTopWidth: 1, borderTopColor: colors.line, borderStyle: 'dashed', marginTop: 12, paddingTop: 10, gap: 6 },
 });

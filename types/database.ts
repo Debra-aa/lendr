@@ -55,11 +55,15 @@ export type WantedRequest = {
   profiles: { full_name: string | null } | null;
 };
 
+export type Campus = { id: string; name: string; email_domain: string };
+
 export type Profile = {
   id: string;
   full_name: string | null;
   location: string | null;
-  campus: string | null;
   avatar_url: string | null;
-  is_verified: boolean;
+  campus: string | null;     // set automatically from the school email
+  campus_id: string | null;
+  is_verified: boolean;      // true once a school email is confirmed
+  verified_at: string | null;
 };

@@ -6,8 +6,7 @@ export const LISTING_SELECT = '*, listing_images(storage_path, position), profil
 
 /**
  * A booking with the listing (and its owner), the renter's name, and any review.
- * listings!inner means only bookings whose listing still exists are returned,
- * and lets us filter by listings.owner_id for the Lending tab.
+ * listings!inner lets the Lending tab filter by listings.owner_id.
  */
 export const BOOKING_SELECT =
   '*, listings!inner(title, category, owner_id, listing_images(storage_path, position), profiles(full_name)), profiles(full_name), reviews(id)';

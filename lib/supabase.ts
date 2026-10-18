@@ -30,8 +30,16 @@ if (Platform.OS !== 'web') {
 }
 
 export const PHOTO_BUCKET = 'listing-photos';
+export const AVATAR_BUCKET = 'avatars';
 
 /** Turns a storage path saved in listing_images into a URL an <Image> can show. */
 export function photoUrl(path: string): string {
   return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/** Reads a picked photo from the phone and uploads it to Storage. */
+export async function uploadImage(bucket: string, path: string, uri: string, contentType: string) {
+  const body = await (await fetch(uri)).arrayBuffer();
+  const { error } = await supabase.storage.from(bucket).upload(path, body, { contentType, upsert: true });
+  if (error) throw error;
 }
