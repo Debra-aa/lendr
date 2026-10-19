@@ -50,7 +50,7 @@ export default function BrowseScreen() {
   const header = (
     <View>
       <Title sub="Rent what you need for a day or a week. Give it back, get your deposit back.">
-        Borrow it from someone on campus
+          Are you ready to eat your cake and have it?
       </Title>
       <View style={styles.search}>
         <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
