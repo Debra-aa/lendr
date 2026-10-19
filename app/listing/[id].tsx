@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, photoUrl } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { LISTING_SELECT } from '../../lib/queries';
-import { addDays, firstName, money, shortDate, toISODate } from '../../lib/format';
+import { addDays, categoryLabel, firstName, money, shortDate, toISODate } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
 import { confirmBlock } from '../../lib/moderation';
 import type { Listing, ReportTarget } from '../../types/database';
@@ -45,6 +45,7 @@ export default function ListingScreen() {
   const photos = [...listing.listing_images].sort((a, b) => a.position - b.position);
   const start = addDays(new Date(), startOffset);
   const end = addDays(start, days - 1);
+  const kind = categoryLabel(listing.category, listing.category_detail);
 
   async function requestToBorrow() {
     if (!listing) return;
@@ -101,6 +102,9 @@ export default function ListingScreen() {
       )}
 
       <Text style={styles.title}>{listing.title}</Text>
+      {kind ? (
+        <View style={styles.kind}><Text style={styles.kindText}>{kind}</Text></View>
+      ) : null}
       {listing.description ? <Text style={shared.muted}>{listing.description}</Text> : null}
 
       <View style={[shared.box, styles.owner]}>
@@ -187,6 +191,11 @@ const styles = StyleSheet.create({
   photos: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.rim },
   heroTag: { width: 240, alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: colors.ink, marginTop: 16, marginBottom: 6 },
+  kind: {
+    alignSelf: 'flex-start', backgroundColor: colors.tags[0], borderRadius: radius.pill,
+    paddingHorizontal: 10, paddingVertical: 3, marginBottom: 8,
+  },
+  kindText: { fontSize: 13, fontWeight: '700', color: colors.ink },
   owner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
   bold: { fontWeight: '700', color: colors.ink, fontSize: 16 },
   facts: { flexDirection: 'row', gap: 10 },

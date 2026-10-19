@@ -43,8 +43,10 @@ export default function BrowseScreen() {
   }
 
   const query = search.trim().toLowerCase();
+  // Search also matches the "kind" typed on Other listings, so "costume" finds Other · Costume.
   const visible = listings.filter((l) =>
-    (category === 'All' || l.category === category) && (!query || l.title.toLowerCase().includes(query)),
+    (category === 'All' || l.category === category) &&
+    (!query || l.title.toLowerCase().includes(query) || (l.category_detail ?? '').toLowerCase().includes(query)),
   );
 
   const header = (

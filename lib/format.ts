@@ -35,3 +35,9 @@ export function shortDate(iso: string): string {
 export function firstName(fullName: string | null | undefined): string {
   return fullName?.trim().split(' ')[0] || 'A student';
 }
+
+/** "Other · Costume" for Other listings with a detail, otherwise just the category. */
+export function categoryLabel(category: string | null, detail: string | null): string | null {
+  if (category === 'Other' && detail) return `Other · ${detail}`;
+  return category;
+}

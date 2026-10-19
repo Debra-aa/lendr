@@ -30,6 +30,7 @@ const categoryIcons: Record<string, IconName> = {
   Study: 'calculator-variant-outline',
   Fun: 'dice-5-outline',
   Dorm: 'lamp-outline',
+  Other: 'shape-outline',
 };
 
 export function iconFor(category: string | null): IconName {

@@ -1,7 +1,9 @@
 // Shapes of the rows the app reads from Supabase.
 // They mirror the tables in the database; embedded objects come from joins in select().
 
-export const CATEGORIES = ['Outdoors', 'Tech', 'Tools', 'Study', 'Fun', 'Dorm'] as const;
+export const CATEGORIES = ['Outdoors', 'Tech', 'Tools', 'Study', 'Fun', 'Dorm', 'Other'] as const;
+export const OTHER_CATEGORY = 'Other';
+export const CATEGORY_DETAIL_MAX = 25; // matches the check on listings.category_detail
 export type Category = (typeof CATEGORIES)[number];
 
 export type ListingImage = { storage_path: string; position: number };
@@ -11,6 +13,7 @@ export type Listing = {
   owner_id: string;
   title: string;
   category: string | null;
+  category_detail: string | null; // only set when category is Other, e.g. "Costume"
   price_cents_per_day: number;
   deposit_cents: number;
   description: string | null;

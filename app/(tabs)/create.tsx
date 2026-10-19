@@ -7,7 +7,7 @@ import { PHOTO_BUCKET, supabase, uploadImage } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { toCents } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
-import { CATEGORIES } from '../../types/database';
+import { CATEGORIES, CATEGORY_DETAIL_MAX, OTHER_CATEGORY } from '../../types/database';
 import { Button, Chip, Field, Title, shared } from '../../components/ui';
 
 const MAX_PHOTOS = 4;
@@ -20,6 +20,7 @@ export default function CreateListingScreen() {
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
+  const [categoryDetail, setCategoryDetail] = useState(''); // only used for Other
   const [price, setPrice] = useState('');
   const [deposit, setDeposit] = useState('');
   const [pickup, setPickup] = useState('');
@@ -47,15 +48,24 @@ export default function CreateListingScreen() {
     }
   }
 
+  function chooseCategory(next: string) {
+    setCategory(next);
+    if (next !== OTHER_CATEGORY) setCategoryDetail('');
+  }
+
   function resetForm() {
     setTitle(''); setPrice(''); setDeposit(''); setPickup(''); setDescription(''); setPhotos([]);
-    setCategory(CATEGORIES[0]);
+    chooseCategory(CATEGORIES[0]);
   }
 
   async function publish() {
     const priceCents = toCents(price);
     const depositCents = deposit.trim() === '' ? 0 : toCents(deposit);
+    const isOther = category === OTHER_CATEGORY;
     if (!title.trim()) return Alert.alert('Missing info', 'Give your item a name so people can find it.');
+    if (isOther && !categoryDetail.trim()) {
+      return Alert.alert('What kind of item is it?', 'You picked Other, so add a word or two like "Costume" or "Kitchen" so people can find it.');
+    }
     if (priceCents === null || priceCents < 100) return Alert.alert('Check the price', 'Set a price of at least $1 a day.');
     if (depositCents === null) return Alert.alert('Check the deposit', 'Enter a dollar amount, or leave it empty for no deposit.');
 
@@ -66,6 +76,7 @@ export default function CreateListingScreen() {
         owner_id: userId,
         title: title.trim(),
         category,
+        category_detail: isOther ? categoryDetail.trim() : null,
         price_cents_per_day: priceCents,
         deposit_cents: depositCents,
         pickup_location: pickup.trim() || null,
@@ -130,8 +141,18 @@ export default function CreateListingScreen() {
 
         <Text style={[styles.label, { marginTop: 14 }]}>Category</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {CATEGORIES.map((c) => <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />)}
+          {CATEGORIES.map((c) => <Chip key={c} label={c} selected={category === c} onPress={() => chooseCategory(c)} />)}
         </ScrollView>
+        {category === OTHER_CATEGORY ? (
+          <Field
+            label="What kind of item is it?"
+            value={categoryDetail}
+            onChangeText={setCategoryDetail}
+            placeholder="Costume, kitchen, sewing…"
+            maxLength={CATEGORY_DETAIL_MAX}
+            autoCapitalize="sentences"
+          />
+        ) : null}
 
         <View style={styles.pair}>
           <View style={{ flex: 1 }}><Field label="Price per day ($)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" placeholder="3" /></View>
