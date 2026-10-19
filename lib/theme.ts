@@ -3,19 +3,19 @@ import type { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Charcoal & Mint, the approved Lendr design.
 export const colors = {
-  paper: '#F5F7F8',     // app background
+  paper: '#FFFFFF',    // app background
   card: '#FFFFFF',
   ink: '#141A21',       // main text
   muted: '#56606B',     // secondary text
   line: '#D7DDE1',      // borders
-  mint: '#0F9F76',      // buttons and selected states
+  mint: '#DC2626',      // buttons and selected states, now red (was #0F9F76)      // buttons and selected states
   pink: '#FB7185',      // accent: + button, offers
   heroTop: '#2B3440',   // header gradient
   heroBottom: '#111827',
-  motto: '#7EE8C4',
+   motto: '#FCA5A5', 
   rim: '#141A21',       // listing card outline and shadow
   danger: '#B03A2E',
-  tags: ['#B8EEDB', '#FFD0D6', '#D3DEE8', '#E9E4D8'],
+  tags: ['#FECACA', '#FFD0D6', '#D3DEE8', '#E9E4D8'],
 };
 
 export const radius = { sm: 10, md: 14, lg: 16, xl: 22, pill: 999 };
