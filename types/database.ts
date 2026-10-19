@@ -67,3 +67,16 @@ export type Profile = {
   is_verified: boolean;      // true once a school email is confirmed
   verified_at: string | null;
 };
+
+// Reasons a student can pick when reporting something. Must match the
+// reason check constraint on the reports table.
+export const REPORT_REASONS = ['spam', 'scam', 'inappropriate', 'harassment', 'prohibited_item', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/** What is being reported: one piece of content (or none) plus the person behind it. */
+export type ReportTarget = {
+  reported_user_id: string;
+  listing_id?: string;
+  wanted_request_id?: string;
+  review_id?: string;
+};

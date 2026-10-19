@@ -6,9 +6,11 @@ import { useUserId } from '../../lib/auth';
 import { LISTING_SELECT } from '../../lib/queries';
 import { addDays, firstName, money, shortDate, toISODate } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
-import type { Listing } from '../../types/database';
+import { confirmBlock } from '../../lib/moderation';
+import type { Listing, ReportTarget } from '../../types/database';
 import { Avatar } from '../../components/Avatar';
 import { ItemTag } from '../../components/ItemTag';
+import { ReportSheet } from '../../components/ReportSheet';
 import { Button, Empty, shared } from '../../components/ui';
 
 const PICKUP_DAYS = 7;  // how far ahead a renter can choose to start
@@ -25,6 +27,7 @@ export default function ListingScreen() {
   const [startOffset, setStartOffset] = useState(1); // days from today
   const [days, setDays] = useState(2);
   const [busy, setBusy] = useState(false);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   useEffect(() => {
     supabase.from('listings').select(LISTING_SELECT).eq('id', id).single()
@@ -155,6 +158,26 @@ export default function ListingScreen() {
           <Button label="Request to borrow" onPress={requestToBorrow} busy={busy} />
         </View>
       )}
+
+      {!isMine ? (
+        <View style={styles.safety}>
+          <Button
+            small
+            variant="ghost"
+            label="Report"
+            onPress={() => setReportTarget({ listing_id: listing.id, reported_user_id: listing.owner_id })}
+          />
+          <Button
+            small
+            variant="ghost"
+            label="Block user"
+            // Their listings disappear once blocked, so leave this screen.
+            onPress={() => confirmBlock(listing.owner_id, ownerName, () => router.back())}
+          />
+        </View>
+      ) : null}
+
+      <ReportSheet target={reportTarget} title="Report listing" onClose={() => setReportTarget(null)} />
     </ScrollView>
   );
 }
@@ -183,5 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper,
   },
   stepText: { fontSize: 20, fontWeight: '700', color: colors.ink },
+  safety: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 8 },
   total: { borderTopWidth: 1, borderTopColor: colors.line, borderStyle: 'dashed', marginTop: 12, paddingTop: 10, gap: 6 },
 });

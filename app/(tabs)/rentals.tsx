@@ -7,8 +7,9 @@ import { useUserId } from '../../lib/auth';
 import { BOOKING_SELECT } from '../../lib/queries';
 import { firstName, money, shortDate } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
-import type { Booking, BookingStatus } from '../../types/database';
+import type { Booking, BookingStatus, ReportTarget } from '../../types/database';
 import { ItemTag } from '../../components/ItemTag';
+import { ReportSheet } from '../../components/ReportSheet';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Button, Empty, Title, shared } from '../../components/ui';
 
@@ -19,6 +20,7 @@ export default function RentalsScreen() {
   const [side, setSide] = useState<Side>('borrowing');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   const loadBookings = useCallback(async () => {
     let query = supabase.from('bookings').select(BOOKING_SELECT).order('created_at', { ascending: false });
@@ -89,6 +91,17 @@ export default function RentalsScreen() {
         );
       case 'active':
         return <Button small label="Mark returned" onPress={() => setStatus(b, 'completed')} />;
+      case 'completed':
+        // The renter's review of this item, if they left one.
+        if (b.reviews.length === 0) return null;
+        return (
+          <Button
+            small
+            variant="ghost"
+            label="Report review"
+            onPress={() => setReportTarget({ review_id: b.reviews[0].id, reported_user_id: b.renter_id })}
+          />
+        );
       default:
         return null;
     }
@@ -134,6 +147,7 @@ export default function RentalsScreen() {
           </View>
         );
       })}
+      <ReportSheet target={reportTarget} title="Report review" onClose={() => setReportTarget(null)} />
     </ScrollView>
   );
 }

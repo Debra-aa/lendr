@@ -7,6 +7,7 @@ import { AVATAR_BUCKET, PHOTO_BUCKET, supabase, uploadImage } from '../../lib/su
 import { useAuth, useUserId } from '../../lib/auth';
 import { LISTING_SELECT } from '../../lib/queries';
 import { money } from '../../lib/format';
+import { errorMessage, unblockUser } from '../../lib/moderation';
 import { colors, radius, type IconName } from '../../lib/theme';
 import type { Listing } from '../../types/database';
 import { Avatar } from '../../components/Avatar';
@@ -16,6 +17,7 @@ import { SectionBanner } from '../../components/SectionBanner';
 import { Button, Empty, Field, shared } from '../../components/ui';
 
 type Stats = { rating: number | null; points: number; earnedCents: number };
+type BlockedUser = { blocked_id: string; profiles: { full_name: string | null; avatar_url: string | null } | null };
 
 function StatTile({ icon, bg, label, value }: { icon: IconName; bg: string; label: string; value: string }) {
   return (
@@ -43,9 +45,10 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [blocked, setBlocked] = useState<BlockedUser[]>([]);
 
   const load = useCallback(async () => {
-    const [listingsResult, lentResult, reviewsResult] = await Promise.all([
+    const [listingsResult, lentResult, reviewsResult, blockedResult] = await Promise.all([
       supabase.from('listings').select(LISTING_SELECT).eq('owner_id', userId).order('created_at', { ascending: false }),
       // Rentals of my items that actually happened (picked up or returned).
       supabase.from('bookings').select('status, total_cents, listings!inner(owner_id)')
@@ -53,9 +56,13 @@ export default function ProfileScreen() {
       // Reviews renters left on my items.
       supabase.from('reviews').select('rating, bookings!inner(listings!inner(owner_id))')
         .eq('bookings.listings.owner_id', userId),
+      // People I blocked. blocks links to profiles twice, so name the foreign key.
+      supabase.from('blocks').select('blocked_id, profiles!blocks_blocked_id_fkey(full_name, avatar_url)')
+        .eq('blocker_id', userId).order('created_at', { ascending: false }),
     ]);
 
     if (listingsResult.data) setListings(listingsResult.data as Listing[]);
+    if (blockedResult.data) setBlocked(blockedResult.data as unknown as BlockedUser[]);
 
     const lent = (lentResult.data ?? []) as { status: string; total_cents: number }[];
     const ratings = ((reviewsResult.data ?? []) as { rating: number }[]).map((r) => r.rating);
@@ -155,7 +162,17 @@ export default function ProfileScreen() {
       await supabase.auth.signOut({ scope: 'local' });
     } catch (e) {
       setDeleting(false);
-      Alert.alert('Account not deleted', e instanceof Error ? e.message : 'Please try again.');
+      // Shows the database's message, e.g. when a rental is still in progress.
+      Alert.alert('Account not deleted', errorMessage(e));
+    }
+  }
+
+  async function unblock(person: BlockedUser) {
+    try {
+      await unblockUser(person.blocked_id);
+      setBlocked((list) => list.filter((b) => b.blocked_id !== person.blocked_id));
+    } catch (e) {
+      Alert.alert('Could not unblock', errorMessage(e));
     }
   }
 
@@ -217,6 +234,23 @@ export default function ProfileScreen() {
         <Button label="Save" onPress={saveName} busy={saving} />
       </View>
 
+      <SectionBanner icon="account-cancel-outline" title="Blocked users" count={blocked.length} slim />
+      {blocked.length === 0 ? (
+        <Text style={[shared.muted, styles.note]}>You have not blocked anyone. You can block someone from their listing or Wanted post.</Text>
+      ) : (
+        <View style={shared.box}>
+          {blocked.map((b, i) => (
+            <View key={b.blocked_id} style={[shared.row, i > 0 && styles.blockedDivider]}>
+              <View style={styles.blockedWho}>
+                <Avatar name={b.profiles?.full_name} url={b.profiles?.avatar_url} size={36} />
+                <Text style={styles.blockedName} numberOfLines={1}>{b.profiles?.full_name || 'A student'}</Text>
+              </View>
+              <Button small variant="ghost" label="Unblock" onPress={() => unblock(b)} />
+            </View>
+          ))}
+        </View>
+      )}
+
       <Button label="Log out" variant="ghost" onPress={signOut} style={{ marginTop: 8 }} />
       <Button label="Delete account" variant="danger" onPress={confirmDeleteAccount} busy={deleting} style={{ marginTop: 8 }} />
     </ScrollView>
@@ -246,5 +280,8 @@ const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 13, marginTop: 8, marginBottom: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 8 },
   cell: { width: '47%' },
+  blockedWho: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  blockedName: { fontSize: 16, fontWeight: '700', color: colors.ink, flexShrink: 1 },
+  blockedDivider: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 10, marginTop: 10 },
   fieldLabel: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 4 },
 });

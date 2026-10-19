@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { colors } from '../../lib/theme';
 import { Button, Field } from '../../components/ui';
 import { AuthScreen, authText } from '../../components/AuthScreen';
 import { PasswordField } from '../../components/PasswordField';
@@ -12,10 +14,15 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   async function handleRegister() {
     if (!fullName.trim() || !email.trim() || password.length < 6) {
       Alert.alert('Missing info', 'Add your name, email, and a password of at least 6 characters.');
+      return;
+    }
+    if (!agreed) {
+      Alert.alert('Terms of Use', 'Please agree to the Terms of Use to create an account.');
       return;
     }
     setLoading(true);
@@ -44,6 +51,23 @@ export default function RegisterScreen() {
       <Field label="School email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@calvin.edu" />
       <PasswordField value={password} onChangeText={setPassword} autoComplete="new-password" placeholder="At least 6 characters" />
 
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: agreed }}
+        onPress={() => setAgreed(!agreed)}
+        style={styles.agree}
+      >
+        <MaterialCommunityIcons
+          name={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'}
+          size={24}
+          color={agreed ? colors.mint : colors.muted}
+        />
+        <Text style={styles.agreeText}>
+          I agree to the{' '}
+          <Text style={authText.link} onPress={() => router.push('/terms')} accessibilityRole="link">Terms of Use</Text>
+        </Text>
+      </Pressable>
+
       <Button label="Create account" onPress={handleRegister} busy={loading} />
 
       <Text style={authText.fine}>
@@ -52,3 +76,8 @@ export default function RegisterScreen() {
     </AuthScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  agree: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+  agreeText: { flex: 1, fontSize: 15, color: colors.ink },
+});

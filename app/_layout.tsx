@@ -31,6 +31,19 @@ function RootNavigator() {
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+
+      {/* Open to everyone: Sign up links here before there is an account. */}
+      <Stack.Screen
+        name="terms"
+        options={{
+          headerShown: true,
+          title: 'Terms of Use',
+          headerBackTitle: 'Back',
+          headerTintColor: colors.ink,
+          headerStyle: { backgroundColor: colors.paper },
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }

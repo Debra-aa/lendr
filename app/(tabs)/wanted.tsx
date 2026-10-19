@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { firstName, money, toCents } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
-import type { WantedRequest } from '../../types/database';
+import { confirmBlock } from '../../lib/moderation';
+import type { ReportTarget, WantedRequest } from '../../types/database';
 import { useShrinkingBanner } from '../../components/Banner';
+import { ReportSheet } from '../../components/ReportSheet';
 import { SectionBanner } from '../../components/SectionBanner';
 import { Button, Empty, Field, shared } from '../../components/ui';
 
@@ -20,6 +22,7 @@ export default function WantedScreen() {
   const [details, setDetails] = useState('');
   const [offer, setOffer] = useState('');
   const [posting, setPosting] = useState(false);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   const loadPosts = useCallback(async () => {
     const { data, error } = await supabase
@@ -100,6 +103,24 @@ export default function WantedScreen() {
                   <Button small label="I have one" onPress={() => router.push({ pathname: '/create', params: { title: p.title } })} />
                 )}
               </View>
+              {!mine ? (
+                <View style={styles.safety}>
+                  <Pressable
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    onPress={() => setReportTarget({ wanted_request_id: p.id, reported_user_id: p.requester_id })}
+                  >
+                    <Text style={styles.safetyText}>Report</Text>
+                  </Pressable>
+                  <Pressable
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    onPress={() => confirmBlock(p.requester_id, firstName(p.profiles?.full_name), loadPosts)}
+                  >
+                    <Text style={styles.safetyText}>Block user</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
           );
         })}
@@ -112,6 +133,7 @@ export default function WantedScreen() {
           <Button label="Post request" onPress={post} busy={posting} />
         </View>
       </ScrollView>
+      <ReportSheet target={reportTarget} title="Report Wanted post" onClose={() => setReportTarget(null)} />
     </KeyboardAvoidingView>
   );
 }
@@ -120,5 +142,7 @@ const styles = StyleSheet.create({
   postTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 4 },
   offer: { backgroundColor: colors.pink, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   offerText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  safety: { flexDirection: 'row', justifyContent: 'flex-end', gap: 18, marginTop: 10 },
+  safetyText: { color: colors.muted, fontSize: 13, fontWeight: '700' },
   formTitle: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 18, marginBottom: 10 },
 });
