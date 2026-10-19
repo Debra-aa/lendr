@@ -87,14 +87,21 @@ export default function ProfileScreen() {
   }
 
   async function changePhoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
-    });
+        let result: ImagePicker.ImagePickerResult;
+    try {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+      });
+    } catch {
+      Alert.alert('Photo not added', 'That photo could not be opened. Try a different photo.');
+      return;
+    }
     if (result.canceled) return;
-
+    
     const asset = result.assets[0];
     const type = asset.mimeType ?? 'image/jpeg';
     const extension = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';

@@ -32,13 +32,19 @@ export default function CreateListingScreen() {
   }, [params.title]);
 
   async function pickPhotos() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_PHOTOS - photos.length,
-      quality: 0.7, // smaller files upload faster and stay under the 5 MB limit
-    });
-    if (!result.canceled) setPhotos([...photos, ...result.assets].slice(0, MAX_PHOTOS));
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_PHOTOS - photos.length,
+        quality: 0.7,
+        // Ask iOS for a standard JPEG copy. Fixes web/PNG images and iCloud-only photos.
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+      });
+      if (!result.canceled) setPhotos([...photos, ...result.assets].slice(0, MAX_PHOTOS));
+    } catch {
+      Alert.alert('Photo not added', 'That photo could not be opened. Try a different photo, or one taken with your camera.');
+    }
   }
 
   function resetForm() {
