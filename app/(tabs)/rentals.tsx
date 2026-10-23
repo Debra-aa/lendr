@@ -1,19 +1,27 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { BOOKING_SELECT } from '../../lib/queries';
 import { firstName, money, shortDate } from '../../lib/format';
+import { CONTACT_INFO, contactUrl } from '../../lib/contacts';
+import { chooseSource, pickHandoffPhoto, saveHandoffPhoto, signedHandoffUrls } from '../../lib/handoff';
+import { errorMessage } from '../../lib/moderation';
 import { colors, radius } from '../../lib/theme';
-import type { Booking, BookingStatus, ReportTarget } from '../../types/database';
+import type { Booking, BookingStatus, HandoffKind, ProfileContact, ReportTarget } from '../../types/database';
+import { HandoffPhotos } from '../../components/HandoffPhotos';
 import { ItemTag } from '../../components/ItemTag';
 import { ReportSheet } from '../../components/ReportSheet';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Button, Empty, Title, shared } from '../../components/ui';
+import { notify } from '../../lib/confirm';
 
 type Side = 'borrowing' | 'lending';
+
+// Contact details are shared once a rental is approved, until the item is returned.
+const SHARES_CONTACT: BookingStatus[] = ['approved', 'active'];
 
 export default function RentalsScreen() {
   const userId = useUserId();
@@ -21,14 +29,41 @@ export default function RentalsScreen() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [contacts, setContacts] = useState<Record<string, ProfileContact>>({});
+  const [handingOff, setHandingOff] = useState<string | null>(null); // booking id being photographed
+
+  // The other person on a rental: the owner when I'm borrowing, the renter when I'm lending.
+  const otherPerson = useCallback(
+    (b: Booking) => (side === 'borrowing' ? b.listings?.owner_id : b.renter_id) ?? null,
+    [side],
+  );
 
   const loadBookings = useCallback(async () => {
     let query = supabase.from('bookings').select(BOOKING_SELECT).order('created_at', { ascending: false });
     query = side === 'borrowing' ? query.eq('renter_id', userId) : query.eq('listings.owner_id', userId);
     const { data, error } = await query;
-    if (error) Alert.alert('Could not load rentals', error.message);
-    else setBookings(data as Booking[]);
-  }, [side, userId]);
+    if (error) {
+      notify('Could not load rentals', error.message);
+      return;
+    }
+    const list = data as Booking[];
+    setBookings(list);
+
+    // The photo bucket is private, so get signed URLs, and fetch contacts the database lets me see.
+    const paths = list.flatMap((b) => b.booking_photos.map((p) => p.storage_path));
+    const people = [...new Set(list.filter((b) => SHARES_CONTACT.includes(b.status)).map(otherPerson).filter((id): id is string => !!id))];
+    const [urls, contactResult] = await Promise.all([
+      signedHandoffUrls(paths),
+      people.length
+        ? supabase.from('profile_contacts').select('user_id, contact_type, contact_value').in('user_id', people)
+        : Promise.resolve({ data: [] as ProfileContact[] }),
+    ]);
+    setPhotoUrls(urls);
+    const byUser: Record<string, ProfileContact> = {};
+    for (const c of (contactResult.data ?? []) as ProfileContact[]) byUser[c.user_id] = c;
+    setContacts(byUser);
+  }, [side, userId, otherPerson]);
 
   useFocusEffect(useCallback(() => { loadBookings(); }, [loadBookings]));
 
@@ -41,13 +76,69 @@ export default function RentalsScreen() {
   // The database only allows valid status changes, so any mistake comes back as an error message.
   async function setStatus(booking: Booking, status: BookingStatus) {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', booking.id);
-    if (error) Alert.alert('Could not update', error.message);
+    if (error) notify('Could not update', error.message);
     else loadBookings();
+  }
+
+  /**
+   * Mark picked up / Mark returned: the database needs a photo first. If a photo
+   * was already saved (say the status update failed last time), skip straight to the update.
+   */
+  async function handOff(booking: Booking, kind: HandoffKind) {
+    const next: BookingStatus = kind === 'pickup' ? 'active' : 'completed';
+    if (!booking.booking_photos.some((p) => p.kind === kind)) {
+      const source = await chooseSource(kind === 'pickup' ? 'Photo at pickup' : 'Photo at return');
+      if (!source) return;
+      const asset = await pickHandoffPhoto(source);
+      if (!asset) return;
+      setHandingOff(booking.id);
+      try {
+        await saveHandoffPhoto(booking.id, kind, asset);
+      } catch (e) {
+        setHandingOff(null);
+        notify('Photo not saved', errorMessage(e));
+        return;
+      }
+    } else {
+      setHandingOff(booking.id);
+    }
+    await setStatus(booking, next);
+    setHandingOff(null);
+  }
+
+  function openContact(c: ProfileContact) {
+    const url = contactUrl(c.contact_type, c.contact_value);
+    if (!url) return;
+    Linking.openURL(url).catch(() => notify('Could not open', `Reach them at ${c.contact_value}.`));
+  }
+
+  function contactLine(b: Booking) {
+    if (!SHARES_CONTACT.includes(b.status)) return null;
+    const person = otherPerson(b);
+    const c = person ? contacts[person] : undefined;
+    if (!c) return <Text style={styles.noContact}>They haven't added a contact yet.</Text>;
+    const info = CONTACT_INFO[c.contact_type];
+    const tappable = contactUrl(c.contact_type, c.contact_value) !== null;
+    return (
+      <Pressable
+        onPress={() => openContact(c)}
+        disabled={!tappable}
+        accessibilityRole={tappable ? 'link' : 'text'}
+        accessibilityLabel={tappable ? `${info.action} ${c.contact_value}` : `${info.label}: ${c.contact_value}`}
+        style={styles.contact}
+      >
+        <MaterialCommunityIcons name={info.icon} size={18} color={colors.mint} />
+        <Text style={styles.contactText} numberOfLines={1} selectable={!tappable}>
+          {info.label}: {c.contact_value}
+        </Text>
+        {tappable ? <Text style={styles.contactAction}>{info.action}</Text> : null}
+      </Pressable>
+    );
   }
 
   async function review(booking: Booking, rating: number) {
     const { error } = await supabase.from('reviews').insert({ booking_id: booking.id, rating });
-    if (error) Alert.alert('Review not saved', error.message);
+    if (error) notify('Review not saved', error.message);
     else loadBookings();
   }
 
@@ -85,12 +176,12 @@ export default function RentalsScreen() {
       case 'approved':
         return (
           <View style={styles.buttons}>
-            <Button small label="Mark picked up" onPress={() => setStatus(b, 'active')} />
+            <Button small label="Mark picked up" busy={handingOff === b.id} onPress={() => handOff(b, 'pickup')} />
             <Button small variant="ghost" label="Cancel" onPress={() => setStatus(b, 'cancelled')} />
           </View>
         );
       case 'active':
-        return <Button small label="Mark returned" onPress={() => setStatus(b, 'completed')} />;
+        return <Button small label="Mark returned" busy={handingOff === b.id} onPress={() => handOff(b, 'return')} />;
       case 'completed':
         // The renter's review of this item, if they left one.
         if (b.reviews.length === 0) return null;
@@ -142,6 +233,8 @@ export default function RentalsScreen() {
                 {shortDate(b.start_date)} to {shortDate(b.end_date)}, {money(b.total_cents)} plus {money(b.deposit_cents)} deposit
               </Text>
               <StatusBadge status={b.status} />
+              {contactLine(b)}
+              <HandoffPhotos photos={b.booking_photos} urls={photoUrls} />
               <View style={{ marginTop: 8 }}>{actions(b)}</View>
             </View>
           </View>
@@ -165,4 +258,11 @@ const styles = StyleSheet.create({
   itemTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   buttons: { flexDirection: 'row', gap: 8 },
   stars: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  contact: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingVertical: 8, paddingHorizontal: 10,
+    backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm,
+  },
+  contactText: { flex: 1, color: colors.ink, fontSize: 14 },
+  contactAction: { color: colors.mint, fontWeight: '700', fontSize: 14 },
+  noContact: { color: colors.muted, fontSize: 13, marginTop: 8, fontStyle: 'italic' },
 });

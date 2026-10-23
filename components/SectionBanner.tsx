@@ -4,21 +4,25 @@ import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radius, type IconName } from '../lib/theme';
 
-type Props = { icon: IconName; title: string; sub?: string; count?: number; slim?: boolean };
+// full: a square block edge to edge across the top of a screen. The gradient runs
+// top to bottom so it meets the charcoal strip behind the status bar.
+type Props = { icon?: IconName; title: string; sub?: string; count?: number; slim?: boolean; full?: boolean };
 
-export function SectionBanner({ icon, title, sub, count, slim }: Props) {
+export function SectionBanner({ icon, title, sub, count, slim, full }: Props) {
   return (
     <LinearGradient
       colors={[colors.heroTop, colors.heroBottom]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.banner, slim && styles.slim]}
+      end={full ? { x: 0, y: 1 } : { x: 1, y: 1 }}
+      style={[styles.banner, slim && styles.slim, full && styles.full]}
     >
-      <View style={styles.icon}>
-        <MaterialCommunityIcons name={icon} size={22} color={colors.motto} />
-      </View>
+      {icon ? (
+        <View style={styles.icon}>
+          <MaterialCommunityIcons name={icon} size={22} color={colors.motto} />
+        </View>
+      ) : null}
       <View style={{ flex: 1 }}>
-        <Text style={[styles.title, slim && { fontSize: 18 }]}>{title}</Text>
+        <Text style={[styles.title, slim && { fontSize: 18 }, full && { fontSize: 26 }]}>{title}</Text>
         {sub ? <Text style={styles.sub}>{sub}</Text> : null}
       </View>
       {count !== undefined ? (
@@ -33,7 +37,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.lg,
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14,
   },
-  slim: { paddingVertical: 10, borderRadius: 12, borderLeftWidth: 6, borderLeftColor: colors.mint, marginTop: 10 },
+  slim: { paddingVertical: 10, borderRadius: 12, marginTop: 10 },
+  full: {
+    borderRadius: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, marginBottom: 4,
+  },
   icon: {
     width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center', justifyContent: 'center',

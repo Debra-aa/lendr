@@ -1,13 +1,14 @@
 // Bottom sheet for reporting a listing, Wanted post or review: pick a reason,
 // add optional details, send. Open it by passing a target; close by passing null.
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { REASON_LABELS, errorMessage, submitReport } from '../lib/moderation';
 import { colors, radius } from '../lib/theme';
 import { REPORT_REASONS, type ReportReason, type ReportTarget } from '../types/database';
 import { Button, Field } from './ui';
+import { notify } from '../lib/confirm';
 
 type Props = { target: ReportTarget | null; title?: string; onClose: () => void };
 
@@ -28,9 +29,9 @@ export function ReportSheet({ target, title = 'Report', onClose }: Props) {
     try {
       await submitReport(target, reason, details);
       onClose();
-      Alert.alert('Thanks, we’ll review this within 24 hours');
+      notify('Thanks, we’ll review this within 24 hours');
     } catch (e) {
-      Alert.alert('Report not sent', errorMessage(e));
+      notify('Report not sent', errorMessage(e));
     } finally {
       setSending(false);
     }

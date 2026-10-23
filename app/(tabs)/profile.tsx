@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -7,14 +7,15 @@ import { AVATAR_BUCKET, PHOTO_BUCKET, supabase, uploadImage } from '../../lib/su
 import { useAuth, useUserId } from '../../lib/auth';
 import { LISTING_SELECT } from '../../lib/queries';
 import { money } from '../../lib/format';
+import { CONTACT_INFO } from '../../lib/contacts';
 import { errorMessage, unblockUser } from '../../lib/moderation';
 import { colors, radius, type IconName } from '../../lib/theme';
-import type { Listing } from '../../types/database';
+import { CONTACT_TYPES, CONTACT_VALUE_MAX, type ContactType, type Listing, type ProfileContact } from '../../types/database';
 import { Avatar } from '../../components/Avatar';
-import { useShrinkingBanner } from '../../components/Banner';
 import { ListingCard } from '../../components/ListingCard';
 import { SectionBanner } from '../../components/SectionBanner';
-import { Button, Empty, Field, shared } from '../../components/ui';
+import { Button, Chip, Empty, Field, shared } from '../../components/ui';
+import { confirmAction, notify } from '../../lib/confirm';
 
 type Stats = { rating: number | null; points: number; earnedCents: number };
 type BlockedUser = { blocked_id: string; profiles: { full_name: string | null; avatar_url: string | null } | null };
@@ -37,7 +38,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const userId = useUserId();
   const { profile, refreshProfile } = useAuth();
-  const onScroll = useShrinkingBanner();
 
   const [fullName, setFullName] = useState('');
   const [listings, setListings] = useState<Listing[]>([]);
@@ -46,9 +46,13 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [blocked, setBlocked] = useState<BlockedUser[]>([]);
+  const [savedContact, setSavedContact] = useState<ProfileContact | null>(null);
+  const [contactType, setContactType] = useState<ContactType>('phone');
+  const [contactValue, setContactValue] = useState('');
+  const [savingContact, setSavingContact] = useState(false);
 
   const load = useCallback(async () => {
-    const [listingsResult, lentResult, reviewsResult, blockedResult] = await Promise.all([
+    const [listingsResult, lentResult, reviewsResult, blockedResult, contactResult] = await Promise.all([
       supabase.from('listings').select(LISTING_SELECT).eq('owner_id', userId).order('created_at', { ascending: false }),
       // Rentals of my items that actually happened (picked up or returned).
       supabase.from('bookings').select('status, total_cents, listings!inner(owner_id)')
@@ -59,10 +63,12 @@ export default function ProfileScreen() {
       // People I blocked. blocks links to profiles twice, so name the foreign key.
       supabase.from('blocks').select('blocked_id, profiles!blocks_blocked_id_fkey(full_name, avatar_url)')
         .eq('blocker_id', userId).order('created_at', { ascending: false }),
+      supabase.from('profile_contacts').select('user_id, contact_type, contact_value').eq('user_id', userId).maybeSingle(),
     ]);
 
     if (listingsResult.data) setListings(listingsResult.data as Listing[]);
     if (blockedResult.data) setBlocked(blockedResult.data as unknown as BlockedUser[]);
+    if (!contactResult.error) showContact(contactResult.data as ProfileContact | null);
 
     const lent = (lentResult.data ?? []) as { status: string; total_cents: number }[];
     const ratings = ((reviewsResult.data ?? []) as { rating: number }[]).map((r) => r.rating);
@@ -97,7 +103,7 @@ export default function ProfileScreen() {
         preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
     } catch {
-      Alert.alert('Photo not added', 'That photo could not be opened. Try a different photo.');
+      notify('Photo not added', 'That photo could not be opened. Try a different photo.');
       return;
     }
     if (result.canceled) return;
@@ -116,39 +122,62 @@ export default function ProfileScreen() {
       if (error) throw error;
       await refreshProfile();
     } catch (e) {
-      Alert.alert('Photo not saved', e instanceof Error ? e.message : 'Please try again.');
+      notify('Photo not saved', e instanceof Error ? e.message : 'Please try again.');
     } finally {
       setUploading(false);
     }
+  }
+
+  function showContact(c: ProfileContact | null) {
+    setSavedContact(c);
+    setContactType(c?.contact_type ?? 'phone');
+    setContactValue(c?.contact_value ?? '');
+  }
+
+  async function saveContact() {
+    const value = contactValue.trim();
+    if (!value) return notify('Add your contact', `Enter your ${CONTACT_INFO[contactType].label.toLowerCase()} so renters can reach you.`);
+    setSavingContact(true);
+    const { data, error } = await supabase
+      .from('profile_contacts')
+      .upsert({ user_id: userId, contact_type: contactType, contact_value: value }, { onConflict: 'user_id' })
+      .select('user_id, contact_type, contact_value')
+      .single();
+    setSavingContact(false);
+    if (error) return notify('Contact not saved', error.message);
+    showContact(data as ProfileContact);
+    notify('Contact saved');
+  }
+
+  async function removeContact() {
+    if (!(await confirmAction('Remove your contact?', 'People you rent with will not see a way to reach you.', 'Remove'))) return;
+    const { error } = await supabase.from('profile_contacts').delete().eq('user_id', userId);
+    if (error) notify('Could not remove', error.message);
+    else showContact(null);
   }
 
   async function saveName() {
     setSaving(true);
     const { error } = await supabase.from('profiles').update({ full_name: fullName.trim() || null }).eq('id', userId);
     setSaving(false);
-    if (error) Alert.alert('Profile not saved', error.message);
+    if (error) notify('Profile not saved', error.message);
     else {
       await refreshProfile();
-      Alert.alert('Profile saved');
+      notify('Profile saved');
     }
   }
 
-  function signOut() {
-    Alert.alert('Log out of Lendr?', '', [
-      { text: 'Stay', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => supabase.auth.signOut() },
-    ]);
+  async function signOut() {
+    if (await confirmAction('Log out of Lendr?', '', 'Log out')) supabase.auth.signOut();
   }
 
-  function confirmDeleteAccount() {
-    Alert.alert(
+  async function confirmDeleteAccount() {
+    const confirmed = await confirmAction(
       'Delete your account?',
       'This permanently deletes your profile, listings, photos, rentals and wanted posts. It cannot be undone.',
-      [
-        { text: 'Keep account', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: deleteAccount },
-      ],
+      'Delete',
     );
+    if (confirmed) deleteAccount();
   }
 
   async function deleteAccount() {
@@ -170,7 +199,7 @@ export default function ProfileScreen() {
     } catch (e) {
       setDeleting(false);
       // Shows the database's message, e.g. when a rental is still in progress.
-      Alert.alert('Account not deleted', errorMessage(e));
+      notify('Account not deleted', errorMessage(e));
     }
   }
 
@@ -179,7 +208,7 @@ export default function ProfileScreen() {
       await unblockUser(person.blocked_id);
       setBlocked((list) => list.filter((b) => b.blocked_id !== person.blocked_id));
     } catch (e) {
-      Alert.alert('Could not unblock', errorMessage(e));
+      notify('Could not unblock', errorMessage(e));
     }
   }
 
@@ -188,8 +217,6 @@ export default function ProfileScreen() {
       style={shared.screen}
       contentContainerStyle={shared.content}
       keyboardShouldPersistTaps="handled"
-      onScroll={onScroll}
-      scrollEventThrottle={32}
     >
       <View style={styles.me}>
         <Pressable onPress={changePhoto} accessibilityRole="button" accessibilityLabel="Change profile picture">
@@ -239,6 +266,28 @@ export default function ProfileScreen() {
           </Text>
         </View>
         <Button label="Save" onPress={saveName} busy={saving} />
+      </View>
+
+      <SectionBanner icon="card-account-phone-outline" title="Contact for pickups" slim />
+      <View style={shared.box}>
+        <Text style={shared.muted}>Only shown to someone after you approve their rental.</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+          {CONTACT_TYPES.map((t) => (
+            <Chip key={t} label={CONTACT_INFO[t].label} selected={contactType === t} onPress={() => setContactType(t)} />
+          ))}
+        </ScrollView>
+        <Field
+          label={CONTACT_INFO[contactType].label}
+          value={contactValue}
+          onChangeText={setContactValue}
+          placeholder={CONTACT_INFO[contactType].placeholder}
+          keyboardType={CONTACT_INFO[contactType].keyboard}
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={CONTACT_VALUE_MAX}
+        />
+        <Button label="Save" onPress={saveContact} busy={savingContact} />
+        {savedContact ? <Button label="Remove" variant="ghost" onPress={removeContact} style={{ marginTop: 8 }} /> : null}
       </View>
 
       <SectionBanner icon="account-cancel-outline" title="Blocked users" count={blocked.length} slim />

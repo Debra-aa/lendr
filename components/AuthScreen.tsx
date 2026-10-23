@@ -13,7 +13,7 @@ type Props = { mode: 'login' | 'signup'; title: string; sub: string; children: R
 export function AuthScreen({ mode, title, sub, children }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-
+  
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.paper }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView

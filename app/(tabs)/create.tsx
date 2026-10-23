@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,8 +7,9 @@ import { PHOTO_BUCKET, supabase, uploadImage } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { toCents } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
-import { CATEGORIES, CATEGORY_DETAIL_MAX, OTHER_CATEGORY } from '../../types/database';
+import { CATEGORIES, CATEGORY_DETAIL_MAX, CONDITIONS, CONDITION_LABELS, OTHER_CATEGORY, type Condition } from '../../types/database';
 import { Button, Chip, Field, Title, shared } from '../../components/ui';
+import { notify } from '../../lib/confirm';
 
 const MAX_PHOTOS = 4;
 
@@ -21,6 +22,7 @@ export default function CreateListingScreen() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [categoryDetail, setCategoryDetail] = useState(''); // only used for Other
+  const [condition, setCondition] = useState<Condition | null>(null); // required, no default
   const [price, setPrice] = useState('');
   const [deposit, setDeposit] = useState('');
   const [pickup, setPickup] = useState('');
@@ -44,7 +46,7 @@ export default function CreateListingScreen() {
       });
       if (!result.canceled) setPhotos([...photos, ...result.assets].slice(0, MAX_PHOTOS));
     } catch {
-      Alert.alert('Photo not added', 'That photo could not be opened. Try a different photo, or one taken with your camera.');
+      notify('Photo not added', 'That photo could not be opened. Try a different photo, or one taken with your camera.');
     }
   }
 
@@ -56,18 +58,20 @@ export default function CreateListingScreen() {
   function resetForm() {
     setTitle(''); setPrice(''); setDeposit(''); setPickup(''); setDescription(''); setPhotos([]);
     chooseCategory(CATEGORIES[0]);
+    setCondition(null);
   }
 
   async function publish() {
     const priceCents = toCents(price);
     const depositCents = deposit.trim() === '' ? 0 : toCents(deposit);
     const isOther = category === OTHER_CATEGORY;
-    if (!title.trim()) return Alert.alert('Missing info', 'Give your item a name so people can find it.');
+    if (!title.trim()) return notify('Missing info', 'Give your item a name so people can find it.');
     if (isOther && !categoryDetail.trim()) {
-      return Alert.alert('What kind of item is it?', 'You picked Other, so add a word or two like "Costume" or "Kitchen" so people can find it.');
+      return notify('What kind of item is it?', 'You picked Other, so add a word or two like "Costume" or "Kitchen" so people can find it.');
     }
-    if (priceCents === null || priceCents < 100) return Alert.alert('Check the price', 'Set a price of at least $1 a day.');
-    if (depositCents === null) return Alert.alert('Check the deposit', 'Enter a dollar amount, or leave it empty for no deposit.');
+    if (!condition) return notify('Pick a condition', 'Let renters know what shape the item is in, from New to Well used.');
+    if (priceCents === null || priceCents < 100) return notify('Check the price', 'Set a price of at least $1 a day.');
+    if (depositCents === null) return notify('Check the deposit', 'Enter a dollar amount, or leave it empty for no deposit.');
 
     setSaving(true);
     const { data: listing, error } = await supabase
@@ -77,6 +81,7 @@ export default function CreateListingScreen() {
         title: title.trim(),
         category,
         category_detail: isOther ? categoryDetail.trim() : null,
+        condition,
         price_cents_per_day: priceCents,
         deposit_cents: depositCents,
         pickup_location: pickup.trim() || null,
@@ -87,7 +92,7 @@ export default function CreateListingScreen() {
 
     if (error || !listing) {
       setSaving(false);
-      return Alert.alert('Listing not published', error?.message ?? 'Please try again.');
+      return notify('Listing not published', error?.message ?? 'Please try again.');
     }
 
     // Upload photos one by one; the listing still exists if a photo fails.
@@ -110,7 +115,7 @@ export default function CreateListingScreen() {
 
     setSaving(false);
     resetForm();
-    if (failed > 0) Alert.alert('Listing published', `${failed} photo(s) did not upload. You can try again later.`);
+    if (failed > 0) notify('Listing published', `${failed} photo(s) did not upload. You can try again later.`);
     router.push(`/listing/${listing.id}`);
   }
 
@@ -153,6 +158,13 @@ export default function CreateListingScreen() {
             autoCapitalize="sentences"
           />
         ) : null}
+
+        <Text style={[styles.label, { marginTop: 14 }]}>Condition</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {CONDITIONS.map((c) => (
+            <Chip key={c} label={CONDITION_LABELS[c]} selected={condition === c} onPress={() => setCondition(c)} />
+          ))}
+        </ScrollView>
 
         <View style={styles.pair}>
           <View style={{ flex: 1 }}><Field label="Price per day ($)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" placeholder="3" /></View>

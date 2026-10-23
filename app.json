@@ -36,7 +36,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Lendr uses your photos so you can add pictures of items you list and a profile photo."
+          "photosPermission": "Lendr uses your photos so you can add pictures of items you list and a profile photo.",
+          "cameraPermission": "Lendr uses your camera to photograph items at pickup and return."
         }
       ],
       "expo-font",

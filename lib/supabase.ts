@@ -31,6 +31,7 @@ if (Platform.OS !== 'web') {
 
 export const PHOTO_BUCKET = 'listing-photos';
 export const AVATAR_BUCKET = 'avatars';
+export const HANDOFF_BUCKET = 'handoff-photos'; // private: read with signed URLs
 
 /** Turns a storage path saved in listing_images into a URL an <Image> can show. */
 export function photoUrl(path: string): string {

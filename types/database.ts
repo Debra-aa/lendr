@@ -6,6 +6,17 @@ export const OTHER_CATEGORY = 'Other';
 export const CATEGORY_DETAIL_MAX = 25; // matches the check on listings.category_detail
 export type Category = (typeof CATEGORIES)[number];
 
+// Matches the condition check on listings, in order from best to worst.
+export const CONDITIONS = ['new', 'like_new', 'good', 'fair', 'well_used'] as const;
+export type Condition = (typeof CONDITIONS)[number];
+export const CONDITION_LABELS: Record<Condition, string> = {
+  new: 'New',
+  like_new: 'Like new',
+  good: 'Good',
+  fair: 'Fair',
+  well_used: 'Well used',
+};
+
 export type ListingImage = { storage_path: string; position: number };
 
 export type Listing = {
@@ -18,6 +29,7 @@ export type Listing = {
   deposit_cents: number;
   description: string | null;
   pickup_location: string | null;
+  condition: Condition | null; // null on listings made before conditions existed
   is_available: boolean;
   created_at: string;
   listing_images: ListingImage[];
@@ -45,7 +57,18 @@ export type Booking = {
   } | null;
   profiles: { full_name: string | null } | null; // the renter
   reviews: { id: string }[];
+  booking_photos: BookingPhoto[];
 };
+
+/** Photos the lender takes at handoff. Files live in the private handoff-photos bucket. */
+export type HandoffKind = 'pickup' | 'return';
+export type BookingPhoto = { kind: HandoffKind; storage_path: string; created_at: string };
+
+// Matches the contact_type check on profile_contacts.
+export const CONTACT_TYPES = ['phone', 'instagram', 'snapchat', 'email', 'other'] as const;
+export type ContactType = (typeof CONTACT_TYPES)[number];
+export const CONTACT_VALUE_MAX = 80;
+export type ProfileContact = { user_id: string; contact_type: ContactType; contact_value: string };
 
 export type WantedRequest = {
   id: string;

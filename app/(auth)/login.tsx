@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Button, Field } from '../../components/ui';
 import { AuthScreen, authText } from '../../components/AuthScreen';
 import { PasswordField } from '../../components/PasswordField';
+import { notify } from '../../lib/confirm';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -14,24 +15,24 @@ export default function LoginScreen() {
 
   async function handleLogin() {
     if (!email.trim() || !password) {
-      Alert.alert('Missing info', 'Enter your email and password.');
+      notify('Missing info', 'Enter your email and password.');
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     // On success the root layout sees the new session and opens the app automatically.
-    if (error) Alert.alert('Could not log in', error.message);
+    if (error) notify('Could not log in', error.message);
   }
 
   async function forgotPassword() {
     if (!email.trim()) {
-      Alert.alert('Enter your email first', 'Type your school email above, then tap Forgot password.');
+      notify('Enter your email first', 'Type your school email above, then tap Forgot password.');
       return;
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-    if (error) Alert.alert('Could not send reset email', error.message);
-    else Alert.alert('Check your email', 'We sent you a link to reset your password.');
+    if (error) notify('Could not send reset email', error.message);
+    else notify('Check your email', 'We sent you a link to reset your password.');
   }
 
   return (

@@ -80,8 +80,8 @@ export default function BrowseScreen() {
   return (
     <FlatList
       style={shared.screen}
-      contentContainerStyle={[shared.content, { gap: 14 }]}
-      columnWrapperStyle={{ gap: 14 }}
+      contentContainerStyle={[shared.content, { gap: 18 }]}
+      columnWrapperStyle={{ gap: 18 }}
       data={visible}
       keyExtractor={(item) => item.id}
       numColumns={2}

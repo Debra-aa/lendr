@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, photoUrl } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
@@ -7,11 +7,12 @@ import { LISTING_SELECT } from '../../lib/queries';
 import { addDays, categoryLabel, firstName, money, shortDate, toISODate } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
 import { confirmBlock } from '../../lib/moderation';
-import type { Listing, ReportTarget } from '../../types/database';
+import { CONDITION_LABELS, type Listing, type ReportTarget } from '../../types/database';
 import { Avatar } from '../../components/Avatar';
 import { ItemTag } from '../../components/ItemTag';
 import { ReportSheet } from '../../components/ReportSheet';
 import { Button, Empty, shared } from '../../components/ui';
+import { confirmAction, notify } from '../../lib/confirm';
 
 const PICKUP_DAYS = 7;  // how far ahead a renter can choose to start
 const MAX_DAYS = 14;    // longest rental from this screen
@@ -59,10 +60,10 @@ export default function ListingScreen() {
     });
     setBusy(false);
     if (error) {
-      Alert.alert('Request not sent', error.message);
+      notify('Request not sent', error.message);
       return;
     }
-    Alert.alert('Request sent', `${firstName(listing.profiles?.full_name)} will approve or decline it. You can follow it under My rentals.`);
+    notify('Request sent', `${firstName(listing.profiles?.full_name)} will approve or decline it. You can follow it under My rentals.`);
     router.replace('/rentals');
   }
 
@@ -70,23 +71,15 @@ export default function ListingScreen() {
     if (!listing) return;
     const next = !listing.is_available;
     const { error } = await supabase.from('listings').update({ is_available: next }).eq('id', listing.id);
-    if (error) Alert.alert('Could not update', error.message);
+    if (error) notify('Could not update', error.message);
     else setListing({ ...listing, is_available: next });
   }
 
-  function confirmDelete() {
-    Alert.alert('Delete this listing?', 'Its photos and details will be removed.', [
-      { text: 'Keep it', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const { error } = await supabase.from('listings').delete().eq('id', listing!.id);
-          if (error) Alert.alert('Could not delete', error.message);
-          else router.back();
-        },
-      },
-    ]);
+  async function confirmDelete() {
+    if (!listing || !(await confirmAction('Delete this listing?', 'Its photos and details will be removed.', 'Delete'))) return;
+    const { error } = await supabase.from('listings').delete().eq('id', listing.id);
+    if (error) notify('Could not delete', error.message);
+    else router.back();
   }
 
   return (
@@ -102,8 +95,15 @@ export default function ListingScreen() {
       )}
 
       <Text style={styles.title}>{listing.title}</Text>
-      {kind ? (
-        <View style={styles.kind}><Text style={styles.kindText}>{kind}</Text></View>
+      {kind || listing.condition ? (
+        <View style={styles.pills}>
+          {kind ? <View style={styles.kind}><Text style={styles.kindText}>{kind}</Text></View> : null}
+          {listing.condition ? (
+            <View style={[styles.kind, styles.condition]}>
+              <Text style={styles.kindText}>{CONDITION_LABELS[listing.condition]}</Text>
+            </View>
+          ) : null}
+        </View>
       ) : null}
       {listing.description ? <Text style={shared.muted}>{listing.description}</Text> : null}
 
@@ -191,10 +191,9 @@ const styles = StyleSheet.create({
   photos: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.rim },
   heroTag: { width: 240, alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: colors.ink, marginTop: 16, marginBottom: 6 },
-  kind: {
-    alignSelf: 'flex-start', backgroundColor: colors.tags[0], borderRadius: radius.pill,
-    paddingHorizontal: 10, paddingVertical: 3, marginBottom: 8,
-  },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  kind: { backgroundColor: colors.tags[0], borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
+  condition: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line },
   kindText: { fontSize: 13, fontWeight: '700', color: colors.ink },
   owner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
   bold: { fontWeight: '700', color: colors.ink, fontSize: 16 },

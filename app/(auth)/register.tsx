@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -7,6 +7,7 @@ import { colors } from '../../lib/theme';
 import { Button, Field } from '../../components/ui';
 import { AuthScreen, authText } from '../../components/AuthScreen';
 import { PasswordField } from '../../components/PasswordField';
+import { notify } from '../../lib/confirm';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -18,11 +19,11 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     if (!fullName.trim() || !email.trim() || password.length < 6) {
-      Alert.alert('Missing info', 'Add your name, email, and a password of at least 6 characters.');
+      notify('Missing info', 'Add your name, email, and a password of at least 6 characters.');
       return;
     }
     if (!agreed) {
-      Alert.alert('Terms of Use', 'Please agree to the Terms of Use to create an account.');
+      notify('Terms of Use', 'Please agree to the Terms of Use to create an account.');
       return;
     }
     setLoading(true);
@@ -36,10 +37,10 @@ export default function RegisterScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Could not create account', error.message);
+      notify('Could not create account', error.message);
     } else if (!data.session) {
       // Email confirmation is on, so there is no session until they tap the link.
-      Alert.alert('Check your email', 'Tap the link we sent you to confirm your account, then log in.');
+      notify('Check your email', 'Tap the link we sent you to confirm your account, then log in.');
       router.replace('/(auth)/login');
     }
     // If a session came back, the root layout opens the app automatically.

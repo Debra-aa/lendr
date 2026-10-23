@@ -1,38 +1,51 @@
-// A listing in the Browse grid: rounded box with a thin rim and a solid offset shadow.
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+// A listing in the Browse grid and on Profile: square photo, then title, price,
+// and one line with the condition and pickup spot. Kept plain, like a shopping site.
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { money } from '../lib/format';
-import { colors } from '../lib/theme';
-import type { Listing } from '../types/database';
-import { ItemTag } from './ItemTag';
+import { colors, iconFor } from '../lib/theme';
+import { CONDITION_LABELS, type Listing } from '../types/database';
+import { firstPhoto } from './ItemTag';
+
+const PHOTO_BG = '#F1F3F5';
 
 export function ListingCard({ listing, onPress }: { listing: Listing; onPress: () => void }) {
+  const photo = firstPhoto(listing.listing_images);
   const where = listing.pickup_location || listing.profiles?.campus || 'On campus';
+  const details = [listing.condition ? CONDITION_LABELS[listing.condition] : null, where].filter(Boolean).join(' · ');
+
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.outer}>
-      {({ pressed }) => (
-        <>
-          {/* The dark box behind the card acts as the offset shadow on both iOS and Android. */}
-          <View style={[styles.shadow, pressed && { top: 1, left: 1 }]} />
-          <View style={[styles.card, pressed && { transform: [{ translateX: 2 }, { translateY: 2 }] }]}>
-            <ItemTag
-              id={listing.id}
-              category={listing.category}
-              images={listing.listing_images}
-              priceLabel={`${money(listing.price_cents_per_day)}/day`}
-            />
-            <Text style={styles.name} numberOfLines={2}>{listing.title}</Text>
-            <Text style={styles.where} numberOfLines={1}>{where}</Text>
-          </View>
-        </>
-      )}
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${listing.title}, ${money(listing.price_cents_per_day)} a day`}
+      style={({ pressed }) => [styles.card, pressed && { opacity: 0.6 }]}
+    >
+      <View style={styles.photo}>
+        {photo ? (
+          <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <MaterialCommunityIcons name={iconFor(listing.category)} size={44} color={colors.muted} />
+        )}
+      </View>
+      <Text style={styles.title} numberOfLines={2}>{listing.title}</Text>
+      <Text style={styles.price}>
+        {money(listing.price_cents_per_day)}
+        <Text style={styles.perDay}>/day</Text>
+      </Text>
+      <Text style={styles.details} numberOfLines={1}>{details}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: { flex: 1, paddingRight: 3, paddingBottom: 3 },
-  shadow: { position: 'absolute', top: 3, left: 3, right: 0, bottom: 0, backgroundColor: colors.rim, borderRadius: 14 },
-  card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.rim, borderRadius: 14, padding: 8, paddingBottom: 10 },
-  name: { fontWeight: '700', fontSize: 15, color: colors.ink, marginTop: 8 },
-  where: { color: colors.muted, fontSize: 13 },
+  card: { flex: 1 },
+  photo: {
+    aspectRatio: 1, borderRadius: 10, overflow: 'hidden', backgroundColor: PHOTO_BG,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  title: { fontSize: 15, color: colors.ink, marginTop: 8 },
+  price: { fontSize: 18, fontWeight: '700', color: colors.ink, marginTop: 4 },
+  perDay: { fontSize: 13, fontWeight: '400', color: colors.muted },
+  details: { fontSize: 13, color: colors.muted, marginTop: 2 },
 });
