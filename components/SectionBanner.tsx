@@ -4,8 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radius, type IconName } from '../lib/theme';
 
-// full: a square block edge to edge across the top of a screen. The gradient runs
-// top to bottom so it meets the charcoal strip behind the status bar.
+// full: a square block edge to edge across the top of a screen, just under the TopBar.
 type Props = { icon?: IconName; title: string; sub?: string; count?: number; slim?: boolean; full?: boolean };
 
 export function SectionBanner({ icon, title, sub, count, slim, full }: Props) {
@@ -39,7 +38,7 @@ const styles = StyleSheet.create({
   },
   slim: { paddingVertical: 10, borderRadius: 12, marginTop: 10 },
   full: {
-    borderRadius: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, marginBottom: 4,
+    borderRadius: 0, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 22, marginBottom: 4,
   },
   icon: {
     width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)',

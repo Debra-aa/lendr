@@ -8,6 +8,7 @@ import { useUserId } from '../../lib/auth';
 import { toCents } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
 import { CATEGORIES, CATEGORY_DETAIL_MAX, CONDITIONS, CONDITION_LABELS, OTHER_CATEGORY, type Condition } from '../../types/database';
+import { TopBar } from '../../components/TopBar';
 import { Button, Chip, Field, Title, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
@@ -121,6 +122,7 @@ export default function CreateListingScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <TopBar />
       <ScrollView style={shared.screen} contentContainerStyle={shared.content} keyboardShouldPersistTaps="handled">
         <Title sub="Earn a little from things you are not using this week.">List an item</Title>
 

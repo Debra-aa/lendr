@@ -2,7 +2,6 @@ import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, View, type ColorValue } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, type IconName } from '../../lib/theme';
 
 function tabIcon(name: IconName) {
@@ -12,15 +11,14 @@ function tabIcon(name: IconName) {
 }
 
 export default function TabsLayout() {
-  const insets = useSafeAreaInsets();
   return (
     <>
       <StatusBar style="dark" />
       <Tabs
         screenOptions={{
-          // No header: each tab starts right below the status bar / notch.
+          // No navigation header: each tab draws its own TopBar, which handles the notch.
           headerShown: false,
-          sceneStyle: { backgroundColor: colors.paper, paddingTop: insets.top },
+          sceneStyle: { backgroundColor: colors.paper },
           tabBarActiveTintColor: colors.mint,
           tabBarInactiveTintColor: colors.muted,
           tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.line },
@@ -28,15 +26,7 @@ export default function TabsLayout() {
         }}
       >
         <Tabs.Screen name="index" options={{ title: 'Browse', tabBarIcon: tabIcon('view-grid-outline') }} />
-        <Tabs.Screen
-          name="wanted"
-          options={{
-            title: 'Wanted',
-            tabBarIcon: tabIcon('message-alert-outline'),
-            // No top padding: the Wanted banner runs up under the status bar itself.
-            sceneStyle: { backgroundColor: colors.paper },
-          }}
-        />
+        <Tabs.Screen name="wanted" options={{ title: 'Wanted', tabBarIcon: tabIcon('message-alert-outline') }} />
         <Tabs.Screen
           name="create"
           options={{

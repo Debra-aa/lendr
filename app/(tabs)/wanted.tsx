@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { useUserId } from '../../lib/auth';
 import { firstName, money, toCents } from '../../lib/format';
@@ -11,19 +9,13 @@ import { confirmBlock } from '../../lib/moderation';
 import type { ReportTarget, WantedRequest } from '../../types/database';
 import { ReportSheet } from '../../components/ReportSheet';
 import { SectionBanner } from '../../components/SectionBanner';
+import { TopBar } from '../../components/TopBar';
 import { Button, Empty, Field, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
 export default function WantedScreen() {
   const router = useRouter();
   const userId = useUserId();
-  const insets = useSafeAreaInsets();
-  // White status bar text over the charcoal banner, only while this tab is open.
-  const [focused, setFocused] = useState(false);
-  useFocusEffect(useCallback(() => {
-    setFocused(true);
-    return () => setFocused(false);
-  }, []));
   const [posts, setPosts] = useState<WantedRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [title, setTitle] = useState('');
@@ -76,9 +68,7 @@ export default function WantedScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {focused ? <StatusBar style="light" /> : null}
-      {/* Charcoal behind the status bar / notch, so the banner reaches the very top. */}
-      <View style={{ height: insets.top, backgroundColor: colors.heroTop }} />
+      <TopBar />
       <ScrollView
         style={shared.screen}
         contentContainerStyle={styles.scroll}

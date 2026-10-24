@@ -8,7 +8,9 @@ export const colors = {
   ink: '#141A21',       // main text
   muted: '#56606B',     // secondary text
   line: '#D7DDE1',      // borders
-  mint: '#DC2626',      // buttons and selected states, now red (was #0F9F76)      // buttons and selected states
+  mint: '#DC2626',      // buttons and selected states, now red (was #0F9F76)
+  logo: '#0F9F76',      // the recycle mark and "lendr" wordmark stay green everywhere
+  logoTint: '#DFF5EC',  // light green behind the mark in the top bar
   pink: '#FB7185',      // accent: + button, offers
   heroTop: '#2B3440',   // header gradient
   heroBottom: '#111827',

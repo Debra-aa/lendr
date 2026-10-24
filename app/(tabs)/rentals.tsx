@@ -15,6 +15,7 @@ import { HandoffPhotos } from '../../components/HandoffPhotos';
 import { ItemTag } from '../../components/ItemTag';
 import { ReportSheet } from '../../components/ReportSheet';
 import { StatusBadge } from '../../components/StatusBadge';
+import { TopBar } from '../../components/TopBar';
 import { Button, Empty, Title, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
@@ -199,49 +200,52 @@ export default function RentalsScreen() {
   }
 
   return (
-    <ScrollView
-      style={shared.screen}
-      contentContainerStyle={shared.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.mint} />}
-    >
-      <Title>My rentals</Title>
+    <View style={shared.screen}>
+      <TopBar />
+      <ScrollView
+        style={shared.screen}
+        contentContainerStyle={shared.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.mint} />}
+      >
+        <Title>My rentals</Title>
 
-      <View style={styles.segment}>
-        {(['borrowing', 'lending'] as Side[]).map((s) => (
-          <Pressable key={s} onPress={() => setSide(s)} style={[styles.segButton, side === s && styles.segSelected]} accessibilityState={{ selected: side === s }}>
-            <Text style={[styles.segText, side === s && { color: '#fff' }]}>{s === 'borrowing' ? 'Borrowing' : 'Lending'}</Text>
-          </Pressable>
-        ))}
-      </View>
+        <View style={styles.segment}>
+          {(['borrowing', 'lending'] as Side[]).map((s) => (
+            <Pressable key={s} onPress={() => setSide(s)} style={[styles.segButton, side === s && styles.segSelected]} accessibilityState={{ selected: side === s }}>
+              <Text style={[styles.segText, side === s && { color: '#fff' }]}>{s === 'borrowing' ? 'Borrowing' : 'Lending'}</Text>
+            </Pressable>
+          ))}
+        </View>
 
-      {bookings.length === 0 ? (
-        <Empty message={side === 'borrowing' ? 'Nothing here yet. Browse items to borrow your first one.' : 'No requests for your items yet.'} />
-      ) : null}
+        {bookings.length === 0 ? (
+          <Empty message={side === 'borrowing' ? 'Nothing here yet. Browse items to borrow your first one.' : 'No requests for your items yet.'} />
+        ) : null}
 
-      {bookings.map((b) => {
-        const item = b.listings;
-        const who = side === 'borrowing'
-          ? `From ${firstName(item?.profiles?.full_name)}`
-          : `${firstName(b.profiles?.full_name)} wants to borrow it`;
-        return (
-          <View key={b.id} style={[shared.box, styles.row]}>
-            <ItemTag id={b.listing_id} category={item?.category ?? null} images={item?.listing_images} style={styles.mini} iconSize={24} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={styles.itemTitle}>{item?.title}</Text>
-              <Text style={shared.muted}>{who}</Text>
-              <Text style={shared.muted}>
-                {shortDate(b.start_date)} to {shortDate(b.end_date)}, {money(b.total_cents)} plus {money(b.deposit_cents)} deposit
-              </Text>
-              <StatusBadge status={b.status} />
-              {contactLine(b)}
-              <HandoffPhotos photos={b.booking_photos} urls={photoUrls} />
-              <View style={{ marginTop: 8 }}>{actions(b)}</View>
+        {bookings.map((b) => {
+          const item = b.listings;
+          const who = side === 'borrowing'
+            ? `From ${firstName(item?.profiles?.full_name)}`
+            : `${firstName(b.profiles?.full_name)} wants to borrow it`;
+          return (
+            <View key={b.id} style={[shared.box, styles.row]}>
+              <ItemTag id={b.listing_id} category={item?.category ?? null} images={item?.listing_images} style={styles.mini} iconSize={24} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={styles.itemTitle}>{item?.title}</Text>
+                <Text style={shared.muted}>{who}</Text>
+                <Text style={shared.muted}>
+                  {shortDate(b.start_date)} to {shortDate(b.end_date)}, {money(b.total_cents)} plus {money(b.deposit_cents)} deposit
+                </Text>
+                <StatusBadge status={b.status} />
+                {contactLine(b)}
+                <HandoffPhotos photos={b.booking_photos} urls={photoUrls} />
+                <View style={{ marginTop: 8 }}>{actions(b)}</View>
+              </View>
             </View>
-          </View>
-        );
-      })}
-      <ReportSheet target={reportTarget} title="Report review" onClose={() => setReportTarget(null)} />
-    </ScrollView>
+          );
+        })}
+        <ReportSheet target={reportTarget} title="Report review" onClose={() => setReportTarget(null)} />
+      </ScrollView>
+    </View>
   );
 }
 
