@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   hero: { borderRadius: 24, padding: 22, paddingTop: 26, overflow: 'hidden', marginBottom: 18 },
   ring: {
     position: 'absolute', right: -40, top: -40, width: 150, height: 150, borderRadius: 75,
-    borderWidth: 18, borderColor: 'rgba(126,232,196,0.14)',
+    borderWidth: 18, borderColor: 'rgba(15,159,118,0.18)',
   },
   word: { color: '#fff', fontSize: 38, fontWeight: '700', letterSpacing: -1, marginTop: 10 },
   motto: { color: colors.motto, fontSize: 15, marginTop: 4 },
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md, padding: 4,
   },
   tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: radius.sm },
-  tabSelected: { backgroundColor: colors.ink },
+  tabSelected: { backgroundColor: colors.mint },
   tabText: { fontWeight: '700', color: colors.muted },
   title: { fontSize: 24, fontWeight: '700', color: colors.ink, marginTop: 16 },
   sub: { fontSize: 15, color: colors.muted, marginTop: 2 },

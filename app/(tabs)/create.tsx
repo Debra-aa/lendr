@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   addText: { fontSize: 12, fontWeight: '700', color: colors.mint },
   remove: {
     position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11,
-    backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center',
   },
   pair: { flexDirection: 'row', gap: 12 },
 });

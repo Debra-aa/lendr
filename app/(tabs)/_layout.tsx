@@ -13,7 +13,7 @@ function tabIcon(name: IconName) {
 export default function TabsLayout() {
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Tabs
         screenOptions={{
           // No navigation header: each tab draws its own TopBar, which handles the notch.

@@ -1,23 +1,24 @@
 import type { ComponentProps } from 'react';
 import type { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Charcoal & Mint, the approved Lendr design.
+// Dark theme: black background, dark gray cards, white text, and the logo's green as the accent.
 export const colors = {
-  paper: '#FFFFFF',    // app background
-  card: '#FFFFFF',
-  ink: '#141A21',       // main text
-  muted: '#56606B',     // secondary text
-  line: '#D7DDE1',      // borders
-  mint: '#DC2626',      // buttons and selected states, now red (was #0F9F76)
-  logo: '#0F9F76',      // the recycle mark and "lendr" wordmark stay green everywhere
+  paper: '#000000',     // app background
+  card: '#1C1C1E',      // cards, inputs, tab bar
+  raised: '#2C2C2E',    // gray circles, pressed rows, small badges
+  ink: '#FFFFFF',       // main text
+  muted: '#A1A1AA',     // secondary text
+  line: '#38383A',      // borders and dividers
+  mint: '#0F9F76',      // buttons and selected states: the same green as the logo
+  logo: '#0F9F76',      // the recycle mark and "lendr" wordmark
   logoTint: '#DFF5EC',  // light green behind the mark in the top bar
   pink: '#FB7185',      // accent: + button, offers
-  heroTop: '#2B3440',   // header gradient
+  heroTop: '#2B3440',   // banner gradient
   heroBottom: '#111827',
-   motto: '#FCA5A5', 
-  rim: '#141A21',       // listing card outline and shadow
-  danger: '#B03A2E',
-  tags: ['#FECACA', '#FFD0D6', '#D3DEE8', '#E9E4D8'],
+  motto: '#7EE8C4',     // light green text on the charcoal banners
+  rim: '#3A3A3C',       // photo and tag outlines
+  danger: '#FF453A',    // destructive actions like Delete, readable on black
+  tags: ['#123D31', '#3A2228', '#22303D', '#36312A'], // dark tints behind icons and pills
 };
 
 export const radius = { sm: 10, md: 14, lg: 16, xl: 22, pill: 999 };

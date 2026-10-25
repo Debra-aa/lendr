@@ -38,6 +38,33 @@ export function photoUrl(path: string): string {
   return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
+/**
+ * Deletes every file under a folder in a bucket, including subfolders
+ * (listing photos live at <user id>/<listing id>/<file>). list() only returns one
+ * level at a time, and entries without an id are folders.
+ */
+export async function removeFolder(bucket: string, folder: string) {
+  const files: string[] = [];
+  const pending = [folder];
+  while (pending.length) {
+    const prefix = pending.pop()!;
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 1000, offset });
+      if (error) throw error;
+      for (const item of data) {
+        const path = `${prefix}/${item.name}`;
+        if (item.id === null) pending.push(path);
+        else files.push(path);
+      }
+      if (data.length < 1000) break;
+    }
+  }
+  for (let i = 0; i < files.length; i += 1000) {
+    const { error } = await supabase.storage.from(bucket).remove(files.slice(i, i + 1000));
+    if (error) throw error;
+  }
+}
+
 /** Reads a picked photo from the phone and uploads it to Storage. */
 export async function uploadImage(bucket: string, path: string, uri: string, contentType: string) {
   const body = await (await fetch(uri)).arrayBuffer();

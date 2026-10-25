@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   photo: { borderWidth: 3, borderColor: colors.mint },
   camera: {
     position: 'absolute', right: -2, bottom: -2, width: 30, height: 30, borderRadius: 15,
-    backgroundColor: colors.ink, borderWidth: 2, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.mint, borderWidth: 2, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center',
   },
   name: { fontSize: 26, fontWeight: '700', color: colors.ink },
   verify: {
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   verified: { backgroundColor: colors.tags[0], borderColor: colors.tags[0] },
   verifyText: { fontWeight: '700', fontSize: 13, color: colors.ink },
   gear: {
-    alignSelf: 'flex-start', width: 38, height: 38, borderRadius: 19, backgroundColor: '#F2F2F2',
+    alignSelf: 'flex-start', width: 38, height: 38, borderRadius: 19, backgroundColor: colors.raised,
     alignItems: 'center', justifyContent: 'center',
   },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },

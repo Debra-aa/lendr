@@ -7,7 +7,7 @@ import { colors, iconFor } from '../lib/theme';
 import { CONDITION_LABELS, type Listing } from '../types/database';
 import { firstPhoto } from './ItemTag';
 
-const PHOTO_BG = '#F1F3F5';
+const PHOTO_BG = colors.card;
 
 export function ListingCard({ listing, onPress }: { listing: Listing; onPress: () => void }) {
   const photo = firstPhoto(listing.listing_images);

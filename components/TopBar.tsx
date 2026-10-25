@@ -14,10 +14,10 @@ import { CATEGORIES } from '../types/database';
 import { Avatar } from './Avatar';
 import { Logo } from './Logo';
 
-const BORDER = '#E6E6E6';
-const PILL_BORDER = '#DDDDDD';
-const GRAY_CIRCLE = '#F2F2F2';
-const AVATAR_BG = '#FDE2E2';
+const BORDER = colors.line;
+const PILL_BORDER = colors.line;
+const GRAY_CIRCLE = colors.raised;
+const AVATAR_BG = colors.tags[0];
 export const ANY_CATEGORY = 'All';
 
 type SearchProps = {
@@ -171,7 +171,7 @@ function MenuItem({ icon, label, onPress, selected }: MenuItemProps) {
 }
 
 const styles = StyleSheet.create({
-  bar: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER, paddingHorizontal: 16, paddingBottom: 12 },
+  bar: { backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: BORDER, paddingHorizontal: 16, paddingBottom: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wordmark: { color: colors.logo, fontSize: 25, fontWeight: '800', letterSpacing: -0.8 },
@@ -180,9 +180,9 @@ const styles = StyleSheet.create({
   menuButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: GRAY_CIRCLE, alignItems: 'center', justifyContent: 'center' },
 
   pill: {
-    flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: '#fff',
+    flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: colors.card,
     borderWidth: 1, borderColor: PILL_BORDER, borderRadius: radius.pill, paddingLeft: 18, paddingRight: 6, paddingVertical: 6,
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.6)',
   },
   segment: { flex: 1, justifyContent: 'center', minHeight: 40 },
   segmentLabel: { fontSize: 13, fontWeight: '700', color: colors.ink },
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
   divider: { width: 1, alignSelf: 'stretch', marginVertical: 6, marginHorizontal: 12, backgroundColor: PILL_BORDER },
   searchButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
 
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.4)' },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingTop: 8, paddingHorizontal: 8, maxHeight: '80%' },
+  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+  sheet: { backgroundColor: colors.card, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingTop: 8, paddingHorizontal: 8, maxHeight: '80%' },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: BORDER, marginBottom: 8 },
   sheetTitle: { fontSize: 17, fontWeight: '700', color: colors.ink, paddingHorizontal: 12, paddingVertical: 8 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 12, paddingVertical: 14, borderRadius: radius.md },

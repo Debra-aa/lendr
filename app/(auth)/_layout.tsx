@@ -5,7 +5,7 @@ import { colors } from '../../lib/theme';
 export default function AuthLayout() {
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: colors.paper } }} />
     </>
   );

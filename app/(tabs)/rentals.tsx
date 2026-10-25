@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md, padding: 4, marginBottom: 14,
   },
   segButton: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: radius.sm },
-  segSelected: { backgroundColor: colors.ink },
+  segSelected: { backgroundColor: colors.mint },
   segText: { fontWeight: '700', color: colors.muted },
   row: { flexDirection: 'row', gap: 12 },
   mini: { width: 56 },

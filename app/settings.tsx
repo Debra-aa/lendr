@@ -8,7 +8,7 @@ import { SUPPORT_EMAIL } from '../lib/config';
 import { confirmAction, notify } from '../lib/confirm';
 import { CONTACT_INFO } from '../lib/contacts';
 import { errorMessage } from '../lib/moderation';
-import { AVATAR_BUCKET, PHOTO_BUCKET, supabase } from '../lib/supabase';
+import { AVATAR_BUCKET, PHOTO_BUCKET, removeFolder, supabase } from '../lib/supabase';
 import { CONTACT_TYPES, CONTACT_VALUE_MAX, type ContactType, type ProfileContact } from '../types/database';
 import { SETTINGS_BG, SettingsBlock, SettingsRow, SettingsSection } from '../components/SettingsList';
 import { Button, Chip, Field } from '../components/ui';
@@ -99,14 +99,11 @@ export default function SettingsScreen() {
     if (!confirmed) return;
     setDeleting(true);
     try {
-      // Photos first: Storage files can't be removed from inside the database.
-      // Best effort, so a leftover photo never blocks deleting the account.
-      const { data: images } = await supabase
-        .from('listing_images').select('storage_path, listings!inner(owner_id)').eq('listings.owner_id', userId);
-      const photoPaths = (images ?? []).map((i) => i.storage_path as string);
-      if (photoPaths.length) await supabase.storage.from(PHOTO_BUCKET).remove(photoPaths);
-      const { data: avatars } = await supabase.storage.from(AVATAR_BUCKET).list(userId);
-      if (avatars?.length) await supabase.storage.from(AVATAR_BUCKET).remove(avatars.map((f) => `${userId}/${f.name}`));
+      // Files first: Storage can't be cleaned up from inside the database, and once the
+      // account is gone nobody can delete them. Everything lives under <user id>/.
+      // If this fails we stop here, so nothing is left behind; trying again is safe.
+      await removeFolder(AVATAR_BUCKET, userId);
+      await removeFolder(PHOTO_BUCKET, userId);
 
       const { error } = await supabase.rpc('delete_my_account');
       if (error) throw error;
@@ -164,7 +161,7 @@ export default function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="Appearance">
-        <SettingsRow icon="theme-light-dark" label="Color mode" value="Light" subtitle="Dark mode coming soon" />
+        <SettingsRow icon="theme-light-dark" label="Color mode" value="Dark" subtitle="Light mode coming soon" />
       </SettingsSection>
 
       <SettingsSection title="Privacy & safety">
