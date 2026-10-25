@@ -5,8 +5,9 @@ import { StyleSheet, View, type ColorValue } from 'react-native';
 import { colors, type IconName } from '../../lib/theme';
 
 function tabIcon(name: IconName) {
+  // The tab bar passes our tabBarActiveTintColor/tabBarInactiveTintColor, which are strings.
   return ({ color, size }: { color: ColorValue; size: number }) => (
-    <MaterialCommunityIcons name={name} color={color} size={size} />
+    <MaterialCommunityIcons name={name} color={color as string} size={size} />
   );
 }
 

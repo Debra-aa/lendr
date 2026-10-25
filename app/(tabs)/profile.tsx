@@ -12,7 +12,7 @@ import type { Listing } from '../../types/database';
 import { Avatar } from '../../components/Avatar';
 import { ListingCard } from '../../components/ListingCard';
 import { SectionBanner } from '../../components/SectionBanner';
-import { TopBar } from '../../components/TopBar';
+import { TopBar, useHideOnScroll } from '../../components/TopBar';
 import { Button, Empty, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
@@ -35,6 +35,7 @@ function StatTile({ icon, bg, label, value }: { icon: IconName; bg: string; labe
 // Account settings (name, contact, blocked users, log out, delete) live on the Settings screen.
 export default function ProfileScreen() {
   const router = useRouter();
+  const { hidden: barHidden, onScroll } = useHideOnScroll();
   const userId = useUserId();
   const { profile, refreshProfile } = useAuth();
 
@@ -108,8 +109,8 @@ export default function ProfileScreen() {
 
   return (
     <View style={shared.screen}>
-      <TopBar />
-      <ScrollView style={shared.screen} contentContainerStyle={shared.content}>
+      <TopBar hidden={barHidden} />
+      <ScrollView onScroll={onScroll} scrollEventThrottle={16} style={shared.screen} contentContainerStyle={shared.content}>
         <View style={styles.me}>
           <Pressable onPress={changePhoto} accessibilityRole="button" accessibilityLabel="Change profile picture">
             <Avatar name={profile?.full_name} url={profile?.avatar_url} size={84} style={styles.photo} />

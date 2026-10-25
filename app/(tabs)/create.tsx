@@ -8,7 +8,7 @@ import { useUserId } from '../../lib/auth';
 import { toCents } from '../../lib/format';
 import { colors, radius } from '../../lib/theme';
 import { CATEGORIES, CATEGORY_DETAIL_MAX, CONDITIONS, CONDITION_LABELS, OTHER_CATEGORY, type Condition } from '../../types/database';
-import { TopBar } from '../../components/TopBar';
+import { TopBar, useHideOnScroll } from '../../components/TopBar';
 import { Button, Chip, Field, Title, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
@@ -16,6 +16,7 @@ const MAX_PHOTOS = 4;
 
 export default function CreateListingScreen() {
   const router = useRouter();
+  const { hidden: barHidden, onScroll } = useHideOnScroll();
   const userId = useUserId();
   // The Wanted board can open this screen with a title filled in.
   const params = useLocalSearchParams<{ title?: string }>();
@@ -122,8 +123,8 @@ export default function CreateListingScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TopBar />
-      <ScrollView style={shared.screen} contentContainerStyle={shared.content} keyboardShouldPersistTaps="handled">
+      <TopBar hidden={barHidden} />
+      <ScrollView onScroll={onScroll} scrollEventThrottle={16} style={shared.screen} contentContainerStyle={shared.content} keyboardShouldPersistTaps="handled">
         <Title sub="Earn a little from things you are not using this week.">List an item</Title>
 
         <Text style={styles.label}>Photos</Text>

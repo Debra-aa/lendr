@@ -15,7 +15,7 @@ import { HandoffPhotos } from '../../components/HandoffPhotos';
 import { ItemTag } from '../../components/ItemTag';
 import { ReportSheet } from '../../components/ReportSheet';
 import { StatusBadge } from '../../components/StatusBadge';
-import { TopBar } from '../../components/TopBar';
+import { TopBar, useHideOnScroll } from '../../components/TopBar';
 import { Button, Empty, Title, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
@@ -26,6 +26,7 @@ const SHARES_CONTACT: BookingStatus[] = ['approved', 'active'];
 
 export default function RentalsScreen() {
   const userId = useUserId();
+  const { hidden: barHidden, onScroll } = useHideOnScroll();
   const [side, setSide] = useState<Side>('borrowing');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -201,8 +202,10 @@ export default function RentalsScreen() {
 
   return (
     <View style={shared.screen}>
-      <TopBar />
+      <TopBar hidden={barHidden} />
       <ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         style={shared.screen}
         contentContainerStyle={shared.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.mint} />}

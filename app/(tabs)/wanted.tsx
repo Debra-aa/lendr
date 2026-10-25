@@ -9,12 +9,13 @@ import { confirmBlock } from '../../lib/moderation';
 import type { ReportTarget, WantedRequest } from '../../types/database';
 import { ReportSheet } from '../../components/ReportSheet';
 import { SectionBanner } from '../../components/SectionBanner';
-import { TopBar } from '../../components/TopBar';
+import { TopBar, useHideOnScroll } from '../../components/TopBar';
 import { Button, Empty, Field, shared } from '../../components/ui';
 import { notify } from '../../lib/confirm';
 
 export default function WantedScreen() {
   const router = useRouter();
+  const { hidden: barHidden, onScroll } = useHideOnScroll();
   const userId = useUserId();
   const [posts, setPosts] = useState<WantedRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,8 +69,10 @@ export default function WantedScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TopBar />
+      <TopBar hidden={barHidden} />
       <ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         style={shared.screen}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"

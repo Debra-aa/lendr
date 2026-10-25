@@ -1,16 +1,18 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { LISTING_SELECT } from '../../lib/queries';
 import { colors } from '../../lib/theme';
 import type { Listing } from '../../types/database';
 import { ListingCard } from '../../components/ListingCard';
-import { ANY_CATEGORY, TopBar } from '../../components/TopBar';
-import { Button, Empty, Title, shared } from '../../components/ui';
+import { ANY_CATEGORY, TopBar, useHideOnScroll } from '../../components/TopBar';
+import { CakeBuddy } from '../../components/CakeBuddy';
+import { Button, Empty, shared } from '../../components/ui';
 
 export default function BrowseScreen() {
   const router = useRouter();
+  const { hidden: barHidden, onScroll } = useHideOnScroll();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,13 +52,13 @@ export default function BrowseScreen() {
   );
 
   const header = (
-    <Title sub="Rent what you need for a day or a week. Give it back, get your deposit back.">
-      Are you ready to eat your cake and have it?
-    </Title>
+    <View style={styles.header}>
+      <CakeBuddy />
+    </View>
   );
 
   const topBar = (
-    <TopBar showListButton search={{ value: search, onChangeText: setSearch, category, onCategory: setCategory }} />
+    <TopBar showListButton search={{ value: search, onChangeText: setSearch, category, onCategory: setCategory }} hidden={barHidden} />
   );
 
   if (loading) {
@@ -72,6 +74,8 @@ export default function BrowseScreen() {
     <View style={shared.screen}>
       {topBar}
       <FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         style={shared.screen}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -104,4 +108,6 @@ export default function BrowseScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  header: { marginBottom: 12 },
+  sub: { color: colors.muted, marginTop: 4, fontSize: 15 }, // same as the Title subtitle
 });

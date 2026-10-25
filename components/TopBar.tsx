@@ -1,9 +1,11 @@
 // Airbnb-style top bar on every tab: logo and wordmark on the left; "List an item"
 // (Browse only), the student's avatar and a menu button on the right. On Browse it
-// also shows the search pill: search text, a category picker and a red search button.
-import { useRef, useState, type ReactNode } from 'react';
+// also shows the search pill: search text, a category picker and a search button.
+// It folds away once you scroll down and comes back at the top of the page (useHideOnScroll).
+import { useCallback, useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import {
-  Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Animated, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,13 +29,51 @@ type SearchProps = {
   onCategory: (category: string) => void;
 };
 
-type Props = { showListButton?: boolean; search?: SearchProps };
+/**
+ * Hides the top bar once the student scrolls down and keeps it hidden until they
+ * get back near the top. Pass onScroll to the screen's ScrollView/FlatList
+ * (with scrollEventThrottle={16}) and hidden to <TopBar hidden={hidden} />.
+ */
+export function useHideOnScroll() {
+  const [hidden, setHidden] = useState(false);
+  const hiddenRef = useRef(false);
+  const lastY = useRef(0);
 
-export function TopBar({ showListButton, search }: Props) {
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const y = contentOffset.y;
+    const maxY = contentSize.height - layoutMeasurement.height;
+    // Ignore the rubber-band bounce past the top or bottom edge.
+    if (y < 0 || y > maxY) return;
+
+    let next = hiddenRef.current;
+    if (y < 40) next = false;                          // back near the top: show
+    else if (y - lastY.current > 6) next = true;        // scrolling down: hide until the top
+    lastY.current = y;
+
+    if (next !== hiddenRef.current) {
+      hiddenRef.current = next;
+      setHidden(next);
+    }
+  }, []);
+
+  return { hidden, onScroll };
+}
+
+type Props = { showListButton?: boolean; search?: SearchProps; hidden?: boolean };
+
+export function TopBar({ showListButton, search, hidden = false }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile, session } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Fold the bar's contents to zero height; the strip behind the status bar stays.
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
+  const progress = useRef(new Animated.Value(0)).current; // 0 shown, 1 hidden
+  useEffect(() => {
+    Animated.timing(progress, { toValue: hidden ? 1 : 0, duration: 200, useNativeDriver: false }).start();
+  }, [hidden, progress]);
 
   function go(path: Parameters<typeof router.navigate>[0]) {
     setMenuOpen(false);
@@ -41,35 +81,47 @@ export function TopBar({ showListButton, search }: Props) {
   }
 
   return (
-    <View style={[styles.bar, { paddingTop: insets.top + 8 }]}>
-      <View style={styles.row}>
-        <View style={styles.brand}>
-          <Logo size={34} radius={10} background={colors.logoTint} />
-          <Text style={styles.wordmark}>lendr</Text>
-        </View>
+    <View style={[styles.bar, { paddingTop: insets.top }]}>
+      <Animated.View
+        style={{
+          overflow: 'hidden',
+          // Natural height until measured, then animate between it and 0.
+          height: contentHeight === null ? undefined : progress.interpolate({ inputRange: [0, 1], outputRange: [contentHeight, 0] }),
+          opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+        }}
+        pointerEvents={hidden ? 'none' : 'auto'}
+      >
+        <View style={styles.content} onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
+          <View style={styles.row}>
+            <View style={styles.brand}>
+              <Logo size={34} radius={10} background={colors.logoTint} />
+              <Text style={styles.wordmark}>lendr</Text>
+            </View>
 
-        <View style={styles.actions}>
-          {showListButton ? (
-            <Pressable onPress={() => router.navigate('/create')} accessibilityRole="button" hitSlop={6}>
-              <Text style={styles.listButton}>List an item</Text>
-            </Pressable>
-          ) : null}
-          <Pressable onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Your profile">
-            <Avatar
-              name={profile?.full_name || session?.user.email}
-              url={profile?.avatar_url}
-              size={38}
-              background={AVATAR_BG}
-              textColor={colors.mint}
-            />
-          </Pressable>
-          <Pressable onPress={() => setMenuOpen(true)} style={styles.menuButton} accessibilityRole="button" accessibilityLabel="Menu">
-            <MaterialCommunityIcons name="menu" size={20} color={colors.ink} />
-          </Pressable>
-        </View>
-      </View>
+            <View style={styles.actions}>
+              {showListButton ? (
+                <Pressable onPress={() => router.navigate('/create')} accessibilityRole="button" hitSlop={6}>
+                  <Text style={styles.listButton}>List an item</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Your profile">
+                <Avatar
+                  name={profile?.full_name || session?.user.email}
+                  url={profile?.avatar_url}
+                  size={38}
+                  background={AVATAR_BG}
+                  textColor={colors.mint}
+                />
+              </Pressable>
+              <Pressable onPress={() => setMenuOpen(true)} style={styles.menuButton} accessibilityRole="button" accessibilityLabel="Menu">
+                <MaterialCommunityIcons name="menu" size={20} color={colors.ink} />
+              </Pressable>
+            </View>
+          </View>
 
-      {search ? <SearchPill {...search} /> : null}
+          {search ? <SearchPill {...search} /> : null}
+        </View>
+      </Animated.View>
 
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
         <MenuItem icon="account-circle-outline" label="Profile" onPress={() => go('/profile')} />
@@ -81,7 +133,7 @@ export function TopBar({ showListButton, search }: Props) {
 }
 
 function SearchPill({ value, onChangeText, category, onCategory }: SearchProps) {
-  const input = useRef<TextInput>(null);
+  const input = useRef<ComponentRef<typeof TextInput>>(null);
   const [picking, setPicking] = useState(false);
   const anyCategory = category === ANY_CATEGORY;
 
@@ -171,7 +223,8 @@ function MenuItem({ icon, label, onPress, selected }: MenuItemProps) {
 }
 
 const styles = StyleSheet.create({
-  bar: { backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: BORDER, paddingHorizontal: 16, paddingBottom: 12 },
+  bar: { backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: BORDER },
+  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wordmark: { color: colors.logo, fontSize: 25, fontWeight: '800', letterSpacing: -0.8 },
