@@ -11,6 +11,7 @@ export const REASON_LABELS: Record<ReportReason, string> = {
   inappropriate: 'Inappropriate content',
   harassment: 'Harassment or bullying',
   prohibited_item: 'Prohibited item',
+  deposit_dispute: 'Deposit issue',
   other: 'Something else',
 };
 

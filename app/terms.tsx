@@ -25,6 +25,10 @@ const SECTIONS: { heading: string; body: string }[] = [
     body: 'Lendr helps students find each other. Lendr is not a party to a rental and does not handle payments. The owner and the renter agree on pickup, return, and any money directly. Return items on time and in the condition you got them. A deposit may be kept if an item comes back late or damaged.',
   },
   {
+    heading: 'Deposits and damage',
+    body: 'Lenders can keep part or all of a deposit only for damage, missing parts, or a late return, and must report it in Lendr within 48 hours of the return, with photos. Normal wear from proper use isn’t damage. Renters can accept or dispute a claim. Disputes are reviewed by Lendr using the pickup, return and damage photos, and Lendr’s decision is final.',
+  },
+  {
     heading: 'Your content',
     body: 'You keep ownership of the photos and text you post. You give Lendr permission to store and show them to other users so the app works. Delete a listing or your account at any time to remove them.',
   },

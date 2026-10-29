@@ -10,18 +10,21 @@ import { REPORT_REASONS, type ReportReason, type ReportTarget } from '../types/d
 import { Button, Field } from './ui';
 import { notify } from '../lib/confirm';
 
-type Props = { target: ReportTarget | null; title?: string; onClose: () => void };
+type Props = { target: ReportTarget | null; title?: string; initialReason?: ReportReason; onClose: () => void };
 
-export function ReportSheet({ target, title = 'Report', onClose }: Props) {
+export function ReportSheet({ target, title = 'Report', initialReason, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Start fresh each time the sheet opens.
+  // "Deposit issue" only makes sense when reporting a rental.
+  const reasons = REPORT_REASONS.filter((r) => r !== 'deposit_dispute' || !!target?.booking_id);
+
+  // Start fresh each time the sheet opens, with the suggested reason picked if there is one.
   useEffect(() => {
-    if (target) { setReason(null); setDetails(''); }
-  }, [target]);
+    if (target) { setReason(initialReason ?? null); setDetails(''); }
+  }, [target, initialReason]);
 
   async function send() {
     if (!target || !reason) return;
@@ -46,7 +49,7 @@ export function ReportSheet({ target, title = 'Report', onClose }: Props) {
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.sub}>Why are you reporting this? Reports are private.</Text>
 
-            {REPORT_REASONS.map((r) => {
+            {reasons.map((r) => {
               const selected = r === reason;
               return (
                 <Pressable

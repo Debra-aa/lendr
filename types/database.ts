@@ -58,10 +58,44 @@ export type Booking = {
   profiles: { full_name: string | null } | null; // the renter
   reviews: { id: string }[];
   booking_photos: BookingPhoto[];
+  // The renter's answer to "Did you get your deposit back?", set once after the return.
+  deposit_return: DepositReturn | null;
+  deposit_confirmed_at: string | null;
+  completed_at: string | null; // set by the database when the rental is marked returned
+};
+
+export type DepositReturn = 'full' | 'partial' | 'none';
+
+/**
+ * A lender keeping part or all of a deposit. One per rental, filed within 48 hours of
+ * completed_at; the renter accepts or disputes it once. Matches the damage_claims checks.
+ */
+export const DAMAGE_REASONS = ['damage', 'missing_parts', 'late_return', 'other'] as const;
+export type DamageReason = (typeof DAMAGE_REASONS)[number];
+export const DAMAGE_REASON_LABELS: Record<DamageReason, string> = {
+  damage: 'Damage',
+  missing_parts: 'Missing parts',
+  late_return: 'Late return',
+  other: 'Other',
+};
+export const CLAIM_WINDOW_HOURS = 48;
+export const CLAIM_DETAILS_MAX = 1000;
+export type DamageClaimStatus = 'pending' | 'accepted' | 'disputed' | 'resolved';
+export type DamageClaim = {
+  id: string;
+  booking_id: string;
+  lender_id: string;
+  reason: DamageReason;
+  amount_kept_cents: number;
+  details: string;
+  status: DamageClaimStatus;
+  renter_response: string | null;
+  responded_at: string | null;
+  created_at: string;
 };
 
 /** Photos the lender takes at handoff. Files live in the private handoff-photos bucket. */
-export type HandoffKind = 'pickup' | 'return';
+export type HandoffKind = 'pickup' | 'return' | 'damage';
 export type BookingPhoto = { kind: HandoffKind; storage_path: string; created_at: string };
 
 // Matches the contact_type check on profile_contacts.
@@ -95,8 +129,9 @@ export type Profile = {
 };
 
 // Reasons a student can pick when reporting something. Must match the
-// reason check constraint on the reports table.
-export const REPORT_REASONS = ['spam', 'scam', 'inappropriate', 'harassment', 'prohibited_item', 'other'] as const;
+// reason check constraint on the reports table. deposit_dispute only applies
+// to a rental (a report with booking_id).
+export const REPORT_REASONS = ['spam', 'scam', 'inappropriate', 'harassment', 'prohibited_item', 'deposit_dispute', 'other'] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];
 
 /** What is being reported: one piece of content (or none) plus the person behind it. */
@@ -105,4 +140,5 @@ export type ReportTarget = {
   listing_id?: string;
   wanted_request_id?: string;
   review_id?: string;
+  booking_id?: string;
 };
